@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  investor-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: investor-database-frontend:dev
+    container_name: investor-frontend
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    networks:
+      - investor-network
+    restart: unless-stopped
+    depends_on:
+      - investor-backend
+
+  investor-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: investor-database-backend:latest
+    container_name: investor-backend
+    ports:
+      - "8001:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - DB_ENVIRONMENT=${DB_ENVIRONMENT:-dev}
+      - USE_SQLITE=${USE_SQLITE:-true}
+      - INVESTOR_DB_HOST=${INVESTOR_DB_HOST:-}
+      - INVESTOR_DB_PORT=${INVESTOR_DB_PORT:-3306}
+      - INVESTOR_DB_NAME_DEV=${INVESTOR_DB_NAME_DEV:-investor_db_dev}
+      - INVESTOR_DB_NAME_PROD=${INVESTOR_DB_NAME_PROD:-investor_db}
+      - INVESTOR_DB_USER=${INVESTOR_DB_USER:-}
+      - INVESTOR_DB_PASSWORD=${INVESTOR_DB_PASSWORD:-}
+      - CORS_ORIGINS=http://localhost:3004,http://investor-frontend:3000
+    volumes:
+      - ./backend/data:/app/data
+    networks:
+      - investor-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  investor-network:
+    driver: bridge
+
+volumes:
+  investor-data:
