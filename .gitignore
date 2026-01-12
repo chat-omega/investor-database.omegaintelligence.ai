@@ -34,6 +34,7 @@ logs/
 # Data
 /backend/data/
 /Fund Data/*.xlsx
+Prequin database /
 
 # Test coverage
 coverage/

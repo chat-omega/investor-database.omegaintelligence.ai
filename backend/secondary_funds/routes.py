@@ -3,7 +3,7 @@ import os
 import time
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, text
 from typing import Optional, List
 
 from .database import get_secondary_db
@@ -483,7 +483,7 @@ Rules:
             sql = sql.strip()
 
         # Execute the query
-        result = db.execute(sql)
+        result = db.execute(text(sql))
         columns = result.keys()
         rows = result.fetchall()
 

@@ -7,6 +7,22 @@ import { GPDatabasePage } from '@/pages/GPDatabasePage';
 import { LPDatabasePage } from '@/pages/LPDatabasePage';
 import { SecondaryFundsPage } from '@/pages/SecondaryFundsPage';
 
+// Preqin Pages
+import { PreqinFirmsPage } from '@/pages/preqin/PreqinFirmsPage';
+import { PreqinFundsPage } from '@/pages/preqin/PreqinFundsPage';
+import { PreqinDealsPage } from '@/pages/preqin/PreqinDealsPage';
+import { PreqinCompaniesPage } from '@/pages/preqin/PreqinCompaniesPage';
+import { PreqinPeoplePage } from '@/pages/preqin/PreqinPeoplePage';
+import { PreqinCoInvestmentPage } from '@/pages/preqin/PreqinCoInvestmentPage';
+import { PreqinSearchPage } from '@/pages/preqin/PreqinSearchPage';
+import { PreqinStatsPage } from '@/pages/preqin/PreqinStatsPage';
+
+// Clean Data Pages
+import { CleanDataGPPage } from '@/pages/clean-data/CleanDataGPPage';
+import { CleanDataLPPage } from '@/pages/clean-data/CleanDataLPPage';
+import { CleanDataDealsPage } from '@/pages/clean-data/CleanDataDealsPage';
+import { CleanDataFundsPage } from '@/pages/clean-data/CleanDataFundsPage';
+
 // Sidebar layout component
 function SidebarLayout() {
   const { isCollapsed } = useSidebar();
@@ -21,9 +37,26 @@ function SidebarLayout() {
       >
         <div className="h-full overflow-y-auto">
           <Routes>
+            {/* Existing routes */}
             <Route path="/gp-database" element={<GPDatabasePage />} />
             <Route path="/lp-database" element={<LPDatabasePage />} />
             <Route path="/secondary-funds" element={<SecondaryFundsPage />} />
+
+            {/* Preqin routes */}
+            <Route path="/preqin/firms" element={<PreqinFirmsPage />} />
+            <Route path="/preqin/funds" element={<PreqinFundsPage />} />
+            <Route path="/preqin/deals" element={<PreqinDealsPage />} />
+            <Route path="/preqin/companies" element={<PreqinCompaniesPage />} />
+            <Route path="/preqin/people" element={<PreqinPeoplePage />} />
+            <Route path="/preqin/network" element={<PreqinCoInvestmentPage />} />
+            <Route path="/preqin/search" element={<PreqinSearchPage />} />
+            <Route path="/preqin/stats" element={<PreqinStatsPage />} />
+
+            {/* Clean Data routes */}
+            <Route path="/clean-data/gp" element={<CleanDataGPPage />} />
+            <Route path="/clean-data/lp" element={<CleanDataLPPage />} />
+            <Route path="/clean-data/deals" element={<CleanDataDealsPage />} />
+            <Route path="/clean-data/funds" element={<CleanDataFundsPage />} />
           </Routes>
         </div>
       </main>

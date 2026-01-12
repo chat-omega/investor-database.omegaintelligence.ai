@@ -1,6 +1,27 @@
 version: '3.8'
 
 services:
+  # PostgreSQL for Preqin data layer
+  preqin-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: preqin-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=investor_user
+      - POSTGRES_PASSWORD=preqin_dev_password
+      - POSTGRES_DB=investor_db
+    volumes:
+      - preqin-postgres-data:/var/lib/postgresql/data
+    networks:
+      - investor-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U investor_user -d investor_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   investor-frontend:
     build:
       context: ./frontend
@@ -43,12 +64,18 @@ services:
       - INVESTOR_DB_NAME_PROD=${INVESTOR_DB_NAME_PROD:-investor_db}
       - INVESTOR_DB_USER=${INVESTOR_DB_USER:-}
       - INVESTOR_DB_PASSWORD=${INVESTOR_DB_PASSWORD:-}
+      # Preqin PostgreSQL (local Docker)
+      - PREQIN_DATABASE_URL=${PREQIN_DATABASE_URL:-postgresql://investor_user:preqin_dev_password@preqin-postgres:5432/investor_db}
       - CORS_ORIGINS=http://localhost:3004,http://investor-frontend:3000
     volumes:
       - ./backend/data:/app/data
+      - "./Prequin database :/app/preqin_data:ro"
     networks:
       - investor-network
     restart: unless-stopped
+    depends_on:
+      preqin-postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -61,3 +88,4 @@ networks:
 
 volumes:
   investor-data:
+  preqin-postgres-data:

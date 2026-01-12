@@ -51,6 +51,22 @@ from schemas.portfolio_company import (
 # Import secondary funds router
 from secondary_funds import secondary_funds_router
 
+# Import Preqin data layer router
+try:
+    from preqin import preqin_router
+    PREQIN_AVAILABLE = True
+except ImportError:
+    PREQIN_AVAILABLE = False
+    preqin_router = None
+
+# Import Clean Data layer router
+try:
+    from clean_data import clean_data_router
+    CLEAN_DATA_AVAILABLE = True
+except ImportError:
+    CLEAN_DATA_AVAILABLE = False
+    clean_data_router = None
+
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -76,6 +92,14 @@ app.add_middleware(
 
 # Include secondary funds router
 app.include_router(secondary_funds_router)
+
+# Include Preqin data layer router if available
+if PREQIN_AVAILABLE and preqin_router:
+    app.include_router(preqin_router)
+
+# Include Clean Data layer router if available
+if CLEAN_DATA_AVAILABLE and clean_data_router:
+    app.include_router(clean_data_router)
 
 # In-memory storage for research sessions
 research_sessions: Dict[str, dict] = {}
