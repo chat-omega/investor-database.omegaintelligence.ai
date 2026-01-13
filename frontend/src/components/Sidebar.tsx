@@ -39,8 +39,8 @@ const fundAnalystSection: NavSection = {
   icon: BarChart3,
   accentColor: 'from-blue-500 to-indigo-500',
   items: [
-    { path: '/gp-database', icon: BarChart3, label: 'GP Database' },
-    { path: '/lp-database', icon: Users, label: 'LP Database' },
+    { path: '/gp-database', icon: BarChart3, label: 'GP Analyst' },
+    { path: '/lp-database', icon: Users, label: 'LP Analyst' },
   ],
 };
 
