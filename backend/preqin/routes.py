@@ -287,18 +287,81 @@ def get_firm_network(
 ):
     """
     Get co-investment network within N hops of a firm.
+    Returns nodes and links for graph visualization.
     """
-    # Verify firm exists
-    sql = text("SELECT name FROM preqin.preqin_firms WHERE id = :firm_id")
+    # Verify firm exists and get its info
+    sql = text("""
+        SELECT name, firm_type, aum_usd
+        FROM preqin.preqin_firms WHERE id = :firm_id
+    """)
     result = db.execute(sql, {"firm_id": str(firm_id)}).fetchone()
-    
+
     if not result:
         raise HTTPException(status_code=404, detail="Firm not found")
-    
-    network = get_network_hops(firm_id, max_hops=max_hops, min_deals=min_deals, session=db)
-    network["firm_name"] = result[0]
-    
-    return network
+
+    firm_name = result[0]
+    firm_type = result[1]
+    firm_aum = float(result[2]) if result[2] else None
+
+    # Get network data from analysis function
+    network_data = get_network_hops(firm_id, max_hops=max_hops, min_deals=min_deals, session=db)
+
+    # Transform to nodes/links format for frontend visualization
+    nodes = []
+    node_ids = set()
+
+    # Add the center (selected) firm as hop_level 0
+    nodes.append({
+        "id": str(firm_id),
+        "name": firm_name,
+        "firm_type": firm_type,
+        "aum_usd": firm_aum,
+        "hop_level": 0
+    })
+    node_ids.add(str(firm_id))
+
+    # Add nodes from each hop level
+    for hop_key, firms in network_data.get("network", {}).items():
+        hop_level = int(hop_key.split("_")[1]) if "_" in hop_key else 1
+        for firm in firms:
+            if firm["firm_id"] not in node_ids:
+                nodes.append({
+                    "id": firm["firm_id"],
+                    "name": firm["firm_name"],
+                    "firm_type": firm["firm_type"],
+                    "aum_usd": firm["aum_usd"],
+                    "hop_level": hop_level
+                })
+                node_ids.add(firm["firm_id"])
+
+    # Get links (co-investment edges) between all the nodes
+    links = []
+    if len(node_ids) > 1:
+        # Build a simple IN clause for the edges query
+        node_ids_str = ",".join(f"'{nid}'" for nid in node_ids)
+        edges_sql = text(f"""
+            SELECT firm_a_id, firm_b_id, deal_count, total_value_usd
+            FROM preqin.preqin_co_investment_edge
+            WHERE firm_a_id IN ({node_ids_str})
+              AND firm_b_id IN ({node_ids_str})
+              AND deal_count >= :min_deals
+        """)
+        edges_result = db.execute(edges_sql, {
+            "min_deals": min_deals
+        })
+
+        for edge in edges_result:
+            links.append({
+                "source": str(edge[0]),
+                "target": str(edge[1]),
+                "deal_count": edge[2],
+                "total_value_usd": float(edge[3]) if edge[3] else None
+            })
+
+    return {
+        "nodes": nodes,
+        "links": links
+    }
 
 
 @router.get("/firms/{firm_a_id}/co-investments/{firm_b_id}", response_model=CoInvestmentDrilldown)
@@ -513,6 +576,159 @@ def get_fund(fund_id: UUID, db: Session = Depends(get_preqin_db)):
         updated_at=result[23],
         managing_firm_id=result[24],
         managing_firm_name=result[25],
+    )
+
+
+# =============================================================================
+# People Endpoints
+# =============================================================================
+
+@router.get("/people", response_model=PersonListResponse)
+def list_people(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    seniority: Optional[str] = None,
+    country: Optional[str] = None,
+    firm_id: Optional[UUID] = None,
+    search: Optional[str] = None,
+    db: Session = Depends(get_preqin_db)
+):
+    """
+    List people/contacts with pagination and filtering.
+    """
+    where_clauses = ["1=1"]
+    params = {}
+
+    if seniority:
+        where_clauses.append("p.seniority_level ILIKE :seniority")
+        params["seniority"] = f"%{seniority}%"
+
+    if country:
+        where_clauses.append("p.location_country ILIKE :country")
+        params["country"] = f"%{country}%"
+
+    if firm_id:
+        where_clauses.append("pe.firm_id = :firm_id AND pe.is_current = TRUE")
+        params["firm_id"] = str(firm_id)
+
+    if search:
+        where_clauses.append("(p.name_normalized % :search OR p.full_name ILIKE :search_like)")
+        params["search"] = search.lower()
+        params["search_like"] = f"%{search}%"
+
+    where_sql = " AND ".join(where_clauses)
+
+    # Count total
+    count_sql = text(f"""
+        SELECT COUNT(DISTINCT p.id)
+        FROM preqin.preqin_persons p
+        LEFT JOIN preqin.preqin_person_employment pe ON pe.person_id = p.id
+        WHERE {where_sql}
+    """)
+    total = db.execute(count_sql, params).scalar()
+
+    # Get page
+    offset = (page - 1) * page_size
+    params["limit"] = page_size
+    params["offset"] = offset
+
+    sql = text(f"""
+        SELECT DISTINCT ON (p.id)
+            p.id, p.source_system, p.source_id, p.preqin_id,
+            p.full_name, p.first_name, p.last_name,
+            p.email, p.phone, p.linkedin_url,
+            p.title, p.seniority_level,
+            p.location_city, p.location_country,
+            p.created_at, p.updated_at,
+            f.id as current_firm_id, f.name as current_firm_name
+        FROM preqin.preqin_persons p
+        LEFT JOIN preqin.preqin_person_employment pe
+            ON pe.person_id = p.id AND pe.is_current = TRUE
+        LEFT JOIN preqin.preqin_firms f ON f.id = pe.firm_id
+        WHERE {where_sql}
+        ORDER BY p.id, p.full_name
+        LIMIT :limit OFFSET :offset
+    """)
+
+    result = db.execute(sql, params)
+
+    items = []
+    for row in result:
+        items.append(PersonResponse(
+            id=row[0],
+            source_system=row[1],
+            source_id=row[2],
+            preqin_id=row[3],
+            full_name=row[4],
+            first_name=row[5],
+            last_name=row[6],
+            email=row[7],
+            phone=row[8],
+            linkedin_url=row[9],
+            title=row[10],
+            seniority_level=row[11],
+            location_city=row[12],
+            location_country=row[13],
+            created_at=row[14],
+            updated_at=row[15],
+            current_firm_id=row[16],
+            current_firm_name=row[17],
+        ))
+
+    return PersonListResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=math.ceil(total / page_size) if total else 0
+    )
+
+
+@router.get("/people/{person_id}", response_model=PersonResponse)
+def get_person(person_id: UUID, db: Session = Depends(get_preqin_db)):
+    """
+    Get person details.
+    """
+    sql = text("""
+        SELECT
+            p.id, p.source_system, p.source_id, p.preqin_id,
+            p.full_name, p.first_name, p.last_name,
+            p.email, p.phone, p.linkedin_url,
+            p.title, p.seniority_level,
+            p.location_city, p.location_country,
+            p.created_at, p.updated_at,
+            f.id as current_firm_id, f.name as current_firm_name
+        FROM preqin.preqin_persons p
+        LEFT JOIN preqin.preqin_person_employment pe
+            ON pe.person_id = p.id AND pe.is_current = TRUE
+        LEFT JOIN preqin.preqin_firms f ON f.id = pe.firm_id
+        WHERE p.id = :person_id
+    """)
+
+    result = db.execute(sql, {"person_id": str(person_id)}).fetchone()
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Person not found")
+
+    return PersonResponse(
+        id=result[0],
+        source_system=result[1],
+        source_id=result[2],
+        preqin_id=result[3],
+        full_name=result[4],
+        first_name=result[5],
+        last_name=result[6],
+        email=result[7],
+        phone=result[8],
+        linkedin_url=result[9],
+        title=result[10],
+        seniority_level=result[11],
+        location_city=result[12],
+        location_country=result[13],
+        created_at=result[14],
+        updated_at=result[15],
+        current_firm_id=result[16],
+        current_firm_name=result[17],
     )
 
 

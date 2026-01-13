@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import {
   BarChart3,
   Users,
@@ -82,15 +82,10 @@ const cleanDataSection: NavSection = {
 };
 
 export function Sidebar() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { isCollapsed, setIsCollapsed } = useSidebar();
   const [preqinExpanded, setPreqinExpanded] = useState(true);
   const [cleanDataExpanded, setCleanDataExpanded] = useState(true);
-
-  const handleNavClick = (path: string) => {
-    navigate(path);
-  };
 
   const isActiveRoute = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -144,8 +139,8 @@ export function Sidebar() {
 
             return (
               <div key={item.path} className="relative group">
-                <button
-                  onClick={() => handleNavClick(item.path)}
+                <Link
+                  to={item.path}
                   className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                     isActive
                       ? 'bg-slate-800 text-white'
@@ -159,7 +154,7 @@ export function Sidebar() {
                   {!isCollapsed && (
                     <span className="text-sm font-medium truncate">{item.label}</span>
                   )}
-                </button>
+                </Link>
 
                 {/* Tooltip for collapsed state */}
                 {isCollapsed && (
@@ -224,8 +219,8 @@ export function Sidebar() {
 
                 return (
                   <div key={item.path} className="relative group">
-                    <button
-                      onClick={() => handleNavClick(item.path)}
+                    <Link
+                      to={item.path}
                       className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                         isActive
                           ? 'bg-amber-500/20 text-amber-400 border-l-2 border-amber-500'
@@ -239,7 +234,7 @@ export function Sidebar() {
                       {!isCollapsed && (
                         <span className="text-sm truncate">{item.label}</span>
                       )}
-                    </button>
+                    </Link>
 
                     {/* Tooltip for collapsed state */}
                     {isCollapsed && (
@@ -297,8 +292,8 @@ export function Sidebar() {
 
                 return (
                   <div key={item.path} className="relative group">
-                    <button
-                      onClick={() => handleNavClick(item.path)}
+                    <Link
+                      to={item.path}
                       className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                         isActive
                           ? 'bg-emerald-500/20 text-emerald-400 border-l-2 border-emerald-500'
@@ -312,7 +307,7 @@ export function Sidebar() {
                       {!isCollapsed && (
                         <span className="text-sm truncate">{item.label}</span>
                       )}
-                    </button>
+                    </Link>
 
                     {/* Tooltip for collapsed state */}
                     {isCollapsed && (

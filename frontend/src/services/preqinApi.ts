@@ -82,10 +82,11 @@ export async function fetchPreqinFirms(params: FirmsParams = {}): Promise<Preqin
   return response.json();
 }
 
-export function usePreqinFirms(params: FirmsParams = {}) {
+export function usePreqinFirms(params: FirmsParams = {}, enabled: boolean = true) {
   return useQuery({
     queryKey: ['preqin-firms', params],
     queryFn: () => fetchPreqinFirms(params),
+    enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

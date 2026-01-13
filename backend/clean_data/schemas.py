@@ -146,7 +146,7 @@ DEFAULT_VISIBLE_COLUMNS = {
     "gp-dataset": {
         "firms": [
             "firm_name", "firm_type", "country", "city",
-            "aum_usd_mn", "dry_powder_usd_mn", "year_est",
+            "aum_usd_mn", "dry_powder_usd_mn",
             "primary_strategy", "total_funds", "website", "last_updated"
         ],
         "contacts": ["name", "fund_manager", "job_title", "email", "linkedin"],

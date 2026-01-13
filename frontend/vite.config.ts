@@ -46,6 +46,9 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    hmr: {
+      clientPort: 3004,  // Port exposed via SSH tunnel
+    },
     proxy: {
       '/api': {
         target: 'http://investor-backend:8000',

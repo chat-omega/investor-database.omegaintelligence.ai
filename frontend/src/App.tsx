@@ -28,14 +28,14 @@ function SidebarLayout() {
   const { isCollapsed } = useSidebar();
 
   return (
-    <div className="min-h-screen bg-slate-900 flex overflow-hidden transition-colors duration-300">
+    <div className="h-screen bg-slate-900 flex overflow-hidden transition-colors duration-300">
       <Sidebar />
       <main
-        className={`flex-1 transition-all duration-300 ease-in-out overflow-x-hidden ${
+        className={`flex-1 transition-all duration-300 ease-in-out overflow-hidden ${
           isCollapsed ? 'ml-14' : 'ml-64'
         }`}
       >
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-auto">
           <Routes>
             {/* Existing routes */}
             <Route path="/gp-database" element={<GPDatabasePage />} />
