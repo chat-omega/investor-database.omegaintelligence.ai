@@ -155,7 +155,7 @@ export function PreqinPeoplePage() {
                           )}
                           {person.linkedin_url && (
                             <a
-                              href={person.linkedin_url}
+                              href={person.linkedin_url.startsWith('http') ? person.linkedin_url : `https://${person.linkedin_url}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-amber-400 hover:text-amber-300"

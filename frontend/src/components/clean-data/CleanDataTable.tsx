@@ -2,7 +2,7 @@
  * Generic table component for displaying Clean Data sheets
  */
 import { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Columns, Loader2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Columns, Loader2, Linkedin, Mail, ExternalLink } from 'lucide-react';
 import type { ColumnDef } from '@/types/cleanData';
 import { formatNumber, formatCurrency, formatDate, truncateText } from '@/services/cleanDataApi';
 
@@ -65,15 +65,29 @@ export function CleanDataTable({
 
   const displayColumns = columns.filter(c => visibleColumns.has(c.key));
 
-  const formatCellValue = (value: unknown, dataType: string): string => {
+  const formatCellValue = (value: unknown, dataType: string, columnKey?: string): string => {
     if (value === null || value === undefined) return '-';
 
     const strValue = String(value);
+    const keyLower = columnKey?.toLowerCase() || '';
+
+    // Check if this is an ID column - never format as currency
+    const isIdColumn = keyLower.includes('_id') || keyLower.endsWith('id') || keyLower === 'id';
+
+    // Check if this looks like an ISO date string (e.g., 2025-12-04T00:00:00)
+    const isIsoDate = /^\d{4}-\d{2}-\d{2}(T|\s)/.test(strValue);
+    if (isIsoDate) {
+      return formatDate(strValue);
+    }
 
     switch (dataType) {
       case 'number':
         const num = parseFloat(strValue);
         if (isNaN(num)) return strValue;
+        // Don't format IDs as currency
+        if (isIdColumn) {
+          return strValue;
+        }
         // Check if it looks like currency (contains M, B, or large number)
         if (strValue.includes('MN') || strValue.includes('USD') || num > 100000) {
           return formatCurrency(num);
@@ -84,6 +98,84 @@ export function CleanDataTable({
       default:
         return truncateText(strValue, 100);
     }
+  };
+
+  // Helper functions for detecting special column types
+  const isEmailColumn = (key: string): boolean => {
+    return key.toLowerCase().includes('email');
+  };
+
+  const isLinkedInColumn = (key: string): boolean => {
+    return key.toLowerCase().includes('linkedin');
+  };
+
+  const isUrlColumn = (key: string): boolean => {
+    return key.toLowerCase().includes('website') ||
+           (key.toLowerCase().includes('url') && !key.toLowerCase().includes('linkedin'));
+  };
+
+  const normalizeUrl = (url: string): string => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `https://${url}`;
+  };
+
+  // Render cell content with special handling for links
+  const renderCellContent = (value: unknown, col: ColumnDef): React.ReactNode => {
+    if (value === null || value === undefined || value === '') return '-';
+
+    const strValue = String(value);
+
+    // Email column - render as mailto link
+    if (isEmailColumn(col.key)) {
+      return (
+        <a
+          href={`mailto:${strValue}`}
+          className="text-emerald-400 hover:text-emerald-300 flex items-center space-x-1"
+          title={strValue}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Mail className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate max-w-[150px]">{strValue}</span>
+        </a>
+      );
+    }
+
+    // LinkedIn column - render as external link
+    if (isLinkedInColumn(col.key)) {
+      return (
+        <a
+          href={normalizeUrl(strValue)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-emerald-400 hover:text-emerald-300 flex items-center space-x-1"
+          title={strValue}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Linkedin className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate max-w-[100px]">LinkedIn</span>
+        </a>
+      );
+    }
+
+    // Website/URL column - render as external link
+    if (isUrlColumn(col.key) && strValue.includes('.')) {
+      return (
+        <a
+          href={normalizeUrl(strValue)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-emerald-400 hover:text-emerald-300 flex items-center space-x-1"
+          title={strValue}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate max-w-[100px]">Link</span>
+        </a>
+      );
+    }
+
+    // Default: use existing formatCellValue for plain text
+    return formatCellValue(value, col.data_type, col.key);
   };
 
   const handleSort = (column: ColumnDef) => {
@@ -193,10 +285,10 @@ export function CleanDataTable({
                 {displayColumns.map(col => (
                   <td
                     key={col.key}
-                    className="px-3 py-2 text-sm text-slate-300 whitespace-nowrap max-w-xs overflow-hidden text-ellipsis"
+                    className="px-3 py-2 text-sm text-slate-300 whitespace-nowrap max-w-xs overflow-hidden"
                     title={String(row[col.key] ?? '')}
                   >
-                    {formatCellValue(row[col.key], col.data_type)}
+                    {renderCellContent(row[col.key], col)}
                   </td>
                 ))}
               </tr>

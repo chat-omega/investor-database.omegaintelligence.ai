@@ -51,12 +51,18 @@ const mainNavItems: NavItem[] = [
   },
 ];
 
-const preqinSection: NavSection = {
-  id: 'preqin',
-  label: 'Preqin Data',
-  icon: Database,
-  accentColor: 'from-amber-500 to-orange-500',
+const privateMarketSection: NavSection = {
+  id: 'private-market',
+  label: 'Private Market Data',
+  icon: FileSpreadsheet,
+  accentColor: 'from-emerald-500 to-teal-500',
   items: [
+    // Clean Data items first
+    { path: '/clean-data/gp', icon: Building2, label: 'GP Dataset' },
+    { path: '/clean-data/lp', icon: Users, label: 'LP Dataset' },
+    { path: '/clean-data/deals', icon: ArrowLeftRight, label: 'Deals Export' },
+    { path: '/clean-data/funds', icon: Briefcase, label: 'Private Funds' },
+    // Preqin items below
     { path: '/preqin/firms', icon: Building2, label: 'Firms' },
     { path: '/preqin/funds', icon: Briefcase, label: 'Funds' },
     { path: '/preqin/deals', icon: ArrowLeftRight, label: 'Deals' },
@@ -68,31 +74,16 @@ const preqinSection: NavSection = {
   ],
 };
 
-const cleanDataSection: NavSection = {
-  id: 'clean-data',
-  label: 'Private Market Data',
-  icon: FileSpreadsheet,
-  accentColor: 'from-emerald-500 to-teal-500',
-  items: [
-    { path: '/clean-data/gp', icon: Building2, label: 'GP Dataset' },
-    { path: '/clean-data/lp', icon: Users, label: 'LP Dataset' },
-    { path: '/clean-data/deals', icon: ArrowLeftRight, label: 'Deals Export' },
-    { path: '/clean-data/funds', icon: Briefcase, label: 'Private Funds' },
-  ],
-};
-
 export function Sidebar() {
   const location = useLocation();
   const { isCollapsed, setIsCollapsed } = useSidebar();
-  const [preqinExpanded, setPreqinExpanded] = useState(true);
-  const [cleanDataExpanded, setCleanDataExpanded] = useState(true);
+  const [privateMarketExpanded, setPrivateMarketExpanded] = useState(true);
 
   const isActiveRoute = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const isPreqinActive = preqinSection.items.some(item => isActiveRoute(item.path));
-  const isCleanDataActive = cleanDataSection.items.some(item => isActiveRoute(item.path));
+  const isPrivateMarketActive = privateMarketSection.items.some(item => isActiveRoute(item.path));
 
   return (
     <div
@@ -170,123 +161,41 @@ export function Sidebar() {
         {/* Separator */}
         <div className="my-4 mx-4 border-t border-slate-700/50" />
 
-        {/* Preqin Section */}
+        {/* Private Market Data Section */}
         <div className="px-2">
           {/* Section Header */}
           <button
-            onClick={() => !isCollapsed && setPreqinExpanded(!preqinExpanded)}
+            onClick={() => !isCollapsed && setPrivateMarketExpanded(!privateMarketExpanded)}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 ${
-              isPreqinActive
-                ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30'
-                : 'hover:bg-slate-800/50'
-            }`}
-            title={isCollapsed ? 'Preqin Data' : undefined}
-          >
-            <div className="flex items-center space-x-3">
-              <div className={`w-6 h-6 rounded flex items-center justify-center bg-gradient-to-br ${preqinSection.accentColor}`}>
-                <Database className="w-3.5 h-3.5 text-white" />
-              </div>
-              {!isCollapsed && (
-                <span className={`text-sm font-semibold ${isPreqinActive ? 'text-amber-400' : 'text-slate-300'}`}>
-                  {preqinSection.label}
-                </span>
-              )}
-            </div>
-            {!isCollapsed && (
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  preqinExpanded ? 'rotate-0' : '-rotate-90'
-                }`}
-              />
-            )}
-          </button>
-
-          {/* Tooltip for collapsed section header */}
-          {isCollapsed && (
-            <div className="relative group">
-              <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
-                Preqin Data
-              </div>
-            </div>
-          )}
-
-          {/* Section Items */}
-          {(preqinExpanded || isCollapsed) && (
-            <div className={`space-y-0.5 ${isCollapsed ? 'mt-1' : 'mt-1 ml-2'}`}>
-              {preqinSection.items.map((item) => {
-                const isActive = isActiveRoute(item.path);
-                const Icon = item.icon;
-
-                return (
-                  <div key={item.path} className="relative group">
-                    <Link
-                      to={item.path}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                        isActive
-                          ? 'bg-amber-500/20 text-amber-400 border-l-2 border-amber-500'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                      }`}
-                      title={isCollapsed ? item.label : undefined}
-                    >
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${
-                        isActive ? 'text-amber-400' : 'text-slate-500 group-hover:text-white'
-                      }`} />
-                      {!isCollapsed && (
-                        <span className="text-sm truncate">{item.label}</span>
-                      )}
-                    </Link>
-
-                    {/* Tooltip for collapsed state */}
-                    {isCollapsed && (
-                      <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
-                        {item.label}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Separator */}
-        <div className="my-4 mx-4 border-t border-slate-700/50" />
-
-        {/* Clean Data Section */}
-        <div className="px-2">
-          {/* Section Header */}
-          <button
-            onClick={() => !isCollapsed && setCleanDataExpanded(!cleanDataExpanded)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 ${
-              isCleanDataActive
+              isPrivateMarketActive
                 ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30'
                 : 'hover:bg-slate-800/50'
             }`}
-            title={isCollapsed ? 'Frequent Clean Data' : undefined}
+            title={isCollapsed ? 'Private Market Data' : undefined}
           >
             <div className="flex items-center space-x-3">
-              <div className={`w-6 h-6 rounded flex items-center justify-center bg-gradient-to-br ${cleanDataSection.accentColor}`}>
+              <div className={`w-6 h-6 rounded flex items-center justify-center bg-gradient-to-br ${privateMarketSection.accentColor}`}>
                 <FileSpreadsheet className="w-3.5 h-3.5 text-white" />
               </div>
               {!isCollapsed && (
-                <span className={`text-sm font-semibold ${isCleanDataActive ? 'text-emerald-400' : 'text-slate-300'}`}>
-                  {cleanDataSection.label}
+                <span className={`text-sm font-semibold ${isPrivateMarketActive ? 'text-emerald-400' : 'text-slate-300'}`}>
+                  {privateMarketSection.label}
                 </span>
               )}
             </div>
             {!isCollapsed && (
               <ChevronDown
                 className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                  cleanDataExpanded ? 'rotate-0' : '-rotate-90'
+                  privateMarketExpanded ? 'rotate-0' : '-rotate-90'
                 }`}
               />
             )}
           </button>
 
           {/* Section Items */}
-          {(cleanDataExpanded || isCollapsed) && (
+          {(privateMarketExpanded || isCollapsed) && (
             <div className={`space-y-0.5 ${isCollapsed ? 'mt-1' : 'mt-1 ml-2'}`}>
-              {cleanDataSection.items.map((item) => {
+              {privateMarketSection.items.map((item) => {
                 const isActive = isActiveRoute(item.path);
                 const Icon = item.icon;
 

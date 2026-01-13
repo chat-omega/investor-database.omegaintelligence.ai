@@ -733,6 +733,142 @@ def get_person(person_id: UUID, db: Session = Depends(get_preqin_db)):
 
 
 # =============================================================================
+# Company Endpoints
+# =============================================================================
+
+@router.get("/companies", response_model=CompanyListResponse)
+def list_companies(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    search: Optional[str] = None,
+    industry: Optional[str] = None,
+    country: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_preqin_db)
+):
+    """List companies with pagination and filtering."""
+    where_clauses = ["1=1"]
+    params = {}
+
+    if search:
+        where_clauses.append("(name ILIKE :search OR name_normalized ILIKE :search_norm)")
+        params["search"] = f"%{search}%"
+        params["search_norm"] = f"%{search.lower()}%"
+
+    if industry:
+        where_clauses.append("(primary_industry ILIKE :industry OR secondary_industry ILIKE :industry)")
+        params["industry"] = f"%{industry}%"
+
+    if country:
+        where_clauses.append("country ILIKE :country")
+        params["country"] = f"%{country}%"
+
+    if status:
+        where_clauses.append("status ILIKE :status")
+        params["status"] = f"%{status}%"
+
+    where_sql = " AND ".join(where_clauses)
+
+    # Count total
+    count_sql = text(f"SELECT COUNT(*) FROM preqin.preqin_companies WHERE {where_sql}")
+    total = db.execute(count_sql, params).scalar()
+
+    # Get page with deal count
+    offset = (page - 1) * page_size
+    params["limit"] = page_size
+    params["offset"] = offset
+
+    sql = text(f"""
+        SELECT
+            c.id, c.source_system, c.source_id, c.preqin_id,
+            c.name, c.name_normalized, c.website, c.description,
+            c.city, c.country, c.region,
+            c.primary_industry, c.secondary_industry, c.status,
+            c.created_at, c.updated_at,
+            COUNT(DISTINCT dtc.deal_id) as deal_count
+        FROM preqin.preqin_companies c
+        LEFT JOIN preqin.preqin_deal_target_company dtc ON dtc.company_id = c.id
+        WHERE {where_sql}
+        GROUP BY c.id
+        ORDER BY c.name ASC
+        LIMIT :limit OFFSET :offset
+    """)
+
+    result = db.execute(sql, params)
+    items = []
+    for row in result:
+        items.append(CompanyResponse(
+            id=row[0],
+            source_system=row[1],
+            source_id=row[2],
+            preqin_id=row[3],
+            name=row[4],
+            name_normalized=row[5],
+            website=row[6],
+            description=row[7],
+            city=row[8],
+            country=row[9],
+            region=row[10],
+            primary_industry=row[11],
+            secondary_industry=row[12],
+            status=row[13],
+            created_at=row[14],
+            updated_at=row[15],
+            deal_count=row[16] or 0,
+        ))
+
+    return CompanyListResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=math.ceil(total / page_size) if total else 0
+    )
+
+
+@router.get("/companies/{company_id}", response_model=CompanyResponse)
+def get_company(company_id: UUID, db: Session = Depends(get_preqin_db)):
+    """Get a single company by ID."""
+    sql = text("""
+        SELECT
+            c.id, c.source_system, c.source_id, c.preqin_id,
+            c.name, c.name_normalized, c.website, c.description,
+            c.city, c.country, c.region,
+            c.primary_industry, c.secondary_industry, c.status,
+            c.created_at, c.updated_at,
+            COUNT(DISTINCT dtc.deal_id) as deal_count
+        FROM preqin.preqin_companies c
+        LEFT JOIN preqin.preqin_deal_target_company dtc ON dtc.company_id = c.id
+        WHERE c.id = :company_id
+        GROUP BY c.id
+    """)
+
+    result = db.execute(sql, {"company_id": str(company_id)}).fetchone()
+    if not result:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    return CompanyResponse(
+        id=result[0],
+        source_system=result[1],
+        source_id=result[2],
+        preqin_id=result[3],
+        name=result[4],
+        name_normalized=result[5],
+        website=result[6],
+        description=result[7],
+        city=result[8],
+        country=result[9],
+        region=result[10],
+        primary_industry=result[11],
+        secondary_industry=result[12],
+        status=result[13],
+        created_at=result[14],
+        updated_at=result[15],
+        deal_count=result[16] or 0,
+    )
+
+
+# =============================================================================
 # Deal Endpoints
 # =============================================================================
 
