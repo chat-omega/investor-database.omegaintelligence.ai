@@ -24,7 +24,7 @@ export function PreqinDealsPage() {
       <div className="border-b border-slate-700/20 bg-slate-900 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
               <ArrowLeftRight className="w-6 h-6 text-white" />
             </div>
             <div>
