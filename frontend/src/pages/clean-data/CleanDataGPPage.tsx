@@ -46,7 +46,7 @@ export function CleanDataGPPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">GP Dataset</h1>
-              <p className="text-sm text-slate-400">General Partner firm data from Preqin</p>
+              <p className="text-sm text-slate-400">General Partner firm data</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">

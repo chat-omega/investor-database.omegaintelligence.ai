@@ -46,7 +46,7 @@ export function CleanDataFundsPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Private Market Funds</h1>
-              <p className="text-sm text-slate-400">Fund information and performance from Preqin</p>
+              <p className="text-sm text-slate-400">Fund information and performance</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">

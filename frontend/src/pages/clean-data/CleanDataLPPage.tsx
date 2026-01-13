@@ -46,7 +46,7 @@ export function CleanDataLPPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">LP Dataset</h1>
-              <p className="text-sm text-slate-400">Limited Partner investor data from Preqin</p>
+              <p className="text-sm text-slate-400">Limited Partner investor data</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">

@@ -32,7 +32,7 @@ export function PreqinFundsPage() {
               <Briefcase className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Preqin Funds</h1>
+              <h1 className="text-xl font-bold text-white">Private Equity Funds</h1>
               <p className="text-sm text-slate-400">Private Market Funds Database</p>
             </div>
           </div>

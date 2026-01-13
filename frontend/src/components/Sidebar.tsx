@@ -44,11 +44,6 @@ const mainNavItems: NavItem[] = [
     icon: Users,
     label: 'LP Database',
   },
-  {
-    path: '/secondary-funds',
-    icon: Database,
-    label: 'Secondary Funds',
-  },
 ];
 
 const privateMarketSection: NavSection = {
@@ -62,6 +57,7 @@ const privateMarketSection: NavSection = {
     { path: '/clean-data/lp', icon: Users, label: 'LP Dataset' },
     { path: '/clean-data/deals', icon: ArrowLeftRight, label: 'Deals Export' },
     { path: '/clean-data/funds', icon: Briefcase, label: 'Private Funds' },
+    { path: '/secondary-funds', icon: Database, label: 'Secondary Funds' },
     // Preqin items below
     { path: '/preqin/firms', icon: Building2, label: 'Firms' },
     { path: '/preqin/funds', icon: Briefcase, label: 'Funds' },

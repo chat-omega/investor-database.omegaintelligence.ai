@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Building2, Search, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { usePreqinFirms, usePreqinStats, formatAUM, formatNumber } from '@/services/preqinApi';
+import { usePreqinFirms, usePreqinStats, formatNumber } from '@/services/preqinApi';
 import type { FirmsParams } from '@/types/preqin';
 
 export function PreqinFirmsPage() {
@@ -46,12 +46,6 @@ export function PreqinFirmsPage() {
                 <div className="text-lg font-bold text-green-400">{formatNumber(stats.total_lps)}</div>
                 <div className="text-slate-400">LPs</div>
               </div>
-              {stats.total_aum_usd && (
-                <div className="text-center">
-                  <div className="text-lg font-bold text-amber-400">{formatAUM(stats.total_aum_usd)}</div>
-                  <div className="text-slate-400">Total AUM</div>
-                </div>
-              )}
             </div>
           )}
         </div>
