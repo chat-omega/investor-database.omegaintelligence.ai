@@ -8,7 +8,7 @@ export function PreqinStatsPage() {
     { label: 'Total Firms', value: formatNumber(stats.total_firms), icon: Building2, color: 'from-blue-500 to-blue-600' },
     { label: 'GPs', value: formatNumber(stats.total_gps), icon: TrendingUp, color: 'from-green-500 to-green-600' },
     { label: 'LPs', value: formatNumber(stats.total_lps), icon: DollarSign, color: 'from-purple-500 to-purple-600' },
-    { label: 'Total Funds', value: formatNumber(stats.total_funds), icon: Briefcase, color: 'from-amber-500 to-orange-600' },
+    { label: 'Total Funds', value: formatNumber(stats.total_funds), icon: Briefcase, color: 'from-emerald-500 to-teal-600' },
     { label: 'Total Deals', value: formatNumber(stats.total_deals), icon: ArrowLeftRight, color: 'from-rose-500 to-rose-600' },
     { label: 'Companies', value: formatNumber(stats.total_companies), icon: Factory, color: 'from-cyan-500 to-cyan-600' },
     { label: 'People', value: formatNumber(stats.total_persons), icon: UserCircle, color: 'from-pink-500 to-pink-600' },
@@ -89,7 +89,7 @@ export function PreqinStatsPage() {
                             </div>
                             <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-amber-500 to-orange-600 rounded-full transition-all duration-500"
+                                className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-500"
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>

@@ -90,7 +90,7 @@ export function PreqinFirmsPage() {
           </select>
           <button
             onClick={handleSearch}
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
           >
             Search
           </button>

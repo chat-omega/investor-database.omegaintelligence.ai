@@ -399,7 +399,7 @@ export function PreqinCoInvestmentPage() {
               <div className="absolute top-4 left-4 bg-slate-800/90 border border-slate-700 rounded-lg p-3">
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-amber-500"></div>
+                    <div className="w-4 h-4 rounded-full bg-emerald-500"></div>
                     <span className="text-slate-300">Selected Firm</span>
                   </div>
                   <div className="flex items-center space-x-2">
