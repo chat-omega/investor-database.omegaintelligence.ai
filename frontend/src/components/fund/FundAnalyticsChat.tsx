@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Send, AlertCircle, X, MessageSquare } from 'lucide-react';
+import { Send, AlertCircle } from 'lucide-react';
 import { Fund } from '@/types/fund';
 import { ReportDisplay } from '@/components/ReportDisplay';
 import { ResearchProgress, ResearchPhase, ResearchQuery, ResearchSource } from '@/components/ResearchProgress';
@@ -33,7 +33,7 @@ const templatePrompts = {
   'exit-strategy': 'Develop a comprehensive exit strategy plan for portfolio companies, including timing, valuation optimization, and buyer identification.'
 };
 
-export function FundAnalyticsChat({ selectedFund, className = '' }: FundAnalyticsChatProps) {
+export function FundAnalyticsChat({ selectedFund }: FundAnalyticsChatProps) {
   // State
   const [query, setQuery] = useState('');
   const [documentType, setDocumentType] = useState('document');
@@ -131,7 +131,7 @@ export function FundAnalyticsChat({ selectedFund, className = '' }: FundAnalytic
   };
 
   const handleSubmit = async () => {
-    if (!query.trim()) return;
+    if (!query.trim() || isResearching) return;
 
     setIsResearching(true);
     setCurrentReport('');
@@ -218,226 +218,151 @@ export function FundAnalyticsChat({ selectedFund, className = '' }: FundAnalytic
     }
   };
 
-  return (
-    <div className={`flex flex-col bg-slate-900 ${className || ''}`}>
-      {/* Content Section - Conditional Layout */}
-      <div className={(!currentReport && !isResearching && !error) ? "flex-1 flex items-center justify-center px-6" : "flex-1 overflow-y-auto px-6 pt-6 pb-4"}>
-        {(!currentReport && !isResearching && !error) ? (
-          // Initial Centered State - Input and Examples
-          <div className="max-w-3xl mx-auto space-y-4 mt-16">
-            {/* Visual Feedback for Selected Fund */}
-            {fundName && (
-              <div className="flex items-center justify-center gap-2 text-sm">
-                <span className="text-slate-400">Analyzing:</span>
-                <span className="px-3 py-1.5 bg-blue-500/20 text-blue-300 rounded-lg font-medium border border-blue-500/30">
-                  {fundName}
-                </span>
-              </div>
-            )}
-
-            {/* Chat Input - Centered */}
-            <div className="space-y-4">
-              <textarea
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                placeholder={fundName
-                  ? `Ask me anything about ${fundName} analytics...`
-                  : "Ask me anything about fund analytics, performance, or strategy..."}
-                rows={1}
-                disabled={isResearching}
-                className="w-full bg-slate-800 text-white placeholder-slate-500 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-slate-700/20 resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ minHeight: '44px' }}
-              />
-
-              {/* Controls Row */}
-              <div className="flex items-center justify-between">
-                {/* Model & Document Type Selectors */}
-                <div className="flex items-center space-x-2">
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs cursor-pointer bg-slate-800/50 backdrop-blur-sm text-white"
-                    disabled={isResearching}
-                  >
-                    <option value="gpt-5">GPT-5</option>
-                    <option value="gpt-5-mini">GPT-5 Mini</option>
-                    <option value="gpt-5-nano">GPT-5 Nano</option>
-                    <option value="openai/gpt-oss-120b">Cerebras GPT-OSS-120B</option>
-                    <option value="gpt-4.1">GPT-4.1</option>
-                    <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="gpt-4o-mini">GPT-4o Mini</option>
-                  </select>
-
-                  <select
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs cursor-pointer bg-slate-800/50 backdrop-blur-sm text-white"
-                    disabled={isResearching}
-                  >
-                    <option value="document">Document</option>
-                    <option value="presentation">Presentation</option>
-                    <option value="spreadsheet">Spreadsheet</option>
-                    <option value="report">Report</option>
-                  </select>
-                </div>
-
-                {/* Send Button */}
-                <button
-                  onClick={handleSubmit}
-                  disabled={!query.trim() || isResearching}
-                  className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                    query.trim() && !isResearching
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isResearching ? 'Researching...' : 'Submit'}
-                </button>
-              </div>
-            </div>
-
-            {/* Example Buttons Section */}
-            <div className="mt-6">
-              <p className="text-slate-400 text-xs mb-3">Try these examples:</p>
-
-              <div className="grid grid-cols-2 gap-2">
-                {exampleButtons.map((example) => (
+  // If there's a report or research in progress, show that view
+  if (currentReport || isResearching || error) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="max-w-4xl mx-auto w-full px-6 pt-6 pb-8">
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-900/20 border border-red-500/50 backdrop-blur-sm rounded-2xl p-6">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-lg font-semibold text-red-400">Research Failed</h3>
+                  <p className="text-red-300 mt-1">{error}</p>
                   <button
-                    key={example.id}
-                    onClick={() => handleExampleClick(example.prompt)}
-                    className="text-left px-3 py-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/20 rounded-lg text-xs text-slate-300 hover:text-white transition-all"
+                    onClick={() => {
+                      setError(null);
+                      setIsResearching(false);
+                    }}
+                    className="mt-3 text-sm text-red-400 hover:text-red-300 underline"
                   >
-                    {example.label}
+                    Dismiss
                   </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          // Report/Research State - Scrollable Content
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-900/20 border border-red-500/50 backdrop-blur-sm rounded-2xl p-6">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-400">Research Failed</h3>
-                    <p className="text-red-300 mt-1">{error}</p>
-                    <button
-                      onClick={() => {
-                        setError(null);
-                        setIsResearching(false);
-                      }}
-                      className="mt-3 text-sm text-red-400 hover:text-red-300 underline"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Research Progress */}
-            {isResearching && !currentReport && !error && (
-              <ResearchProgress
-                phases={phases}
-                queries={queries}
-                sources={sources}
-                progressMessage={progressMessage}
-                isComplete={false}
-              />
-            )}
+          {/* Research Progress */}
+          {isResearching && !currentReport && !error && (
+            <ResearchProgress
+              phases={phases}
+              queries={queries}
+              sources={sources}
+              progressMessage={progressMessage}
+              isComplete={false}
+            />
+          )}
 
-            {/* Report Display */}
-            {currentReport && !error && (
-              <ReportDisplay
-                content={currentReport}
-                isStreaming={isResearching}
-                title={currentSession?.query}
-                onDownload={handleDownload}
-              />
-            )}
-          </div>
-        )}
+          {/* Report Display */}
+          {currentReport && !error && (
+            <ReportDisplay
+              content={currentReport}
+              isStreaming={isResearching}
+              title={currentSession?.query}
+              onDownload={handleDownload}
+            />
+          )}
+        </div>
       </div>
+    );
+  }
 
-      {/* Chat Input - Fixed at Bottom (Only when report exists) */}
-      {(currentReport || isResearching || error) && (
-        <div className="flex-shrink-0 px-6 py-4 border-t border-slate-700/20 bg-slate-900/50 backdrop-blur-sm">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-end space-x-2">
-              <div className="flex-1 relative">
-                <textarea
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit();
-                    }
-                  }}
-                  placeholder={fundName
-                    ? `Ask me anything about ${fundName} analytics...`
-                    : "Ask me anything about fund analytics, performance, or strategy..."}
-                  rows={1}
+  // Initial state - centered layout with examples above chatbox
+  return (
+    <div className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="max-w-4xl mx-auto w-full px-6 pt-4 pb-8">
+        {/* Example Buttons Section */}
+        <div className="mt-12">
+          <h2 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wide">Try these examples</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {exampleButtons.map((example) => (
+              <button
+                key={example.id}
+                onClick={() => handleExampleClick(example.prompt)}
+                className="group relative bg-gradient-to-br from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 rounded-xl p-4 text-left transition-all duration-200 hover:shadow-xl hover:scale-105 border border-slate-700/20 hover:border-purple-500/50"
+              >
+                <div className="relative z-10 flex items-center justify-center text-center">
+                  <span className="text-white font-semibold text-sm leading-tight">
+                    {example.label}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat Input - Centered below examples */}
+        <div className="mt-12 z-10">
+          <div className="relative">
+            <textarea
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={fundName
+                ? `Ask me anything about ${fundName} analytics, performance, or strategy...`
+                : "Ask me anything about fund analytics, performance, or strategy..."}
+              rows={2}
+              className="w-full px-6 py-5 pb-20 border-2 border-slate-700/50 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-white placeholder-slate-500 bg-slate-800/50 backdrop-blur-sm shadow-lg"
+              disabled={isResearching}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  handleSubmit();
+                }
+              }}
+            />
+
+            {/* Controls Inside Textarea - Bottom */}
+            <div className="absolute bottom-5 left-6 right-6 flex items-center justify-between">
+              {/* Left: Model & Document Selectors */}
+              <div className="flex items-center space-x-2">
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="px-4 py-2 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer bg-slate-800/50 backdrop-blur-sm text-white"
                   disabled={isResearching}
-                  className="w-full bg-slate-800 text-white placeholder-slate-500 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-slate-700/20 resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ minHeight: '44px' }}
-                />
+                >
+                  <option value="gpt-5">GPT-5</option>
+                  <option value="gpt-5-mini">GPT-5 Mini</option>
+                  <option value="gpt-5-nano">GPT-5 Nano</option>
+                  <option value="openai/gpt-oss-120b">Cerebras GPT-OSS-120B</option>
+                  <option value="gpt-4.1">GPT-4.1</option>
+                  <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                  <option value="gpt-4o">GPT-4o</option>
+                  <option value="gpt-4o-mini">GPT-4o Mini</option>
+                </select>
+
+                <select
+                  value={documentType}
+                  onChange={(e) => setDocumentType(e.target.value)}
+                  className="px-4 py-2 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer bg-slate-800/50 backdrop-blur-sm text-white"
+                  disabled={isResearching}
+                >
+                  <option value="document">Document</option>
+                  <option value="presentation">Presentation</option>
+                  <option value="spreadsheet">Spreadsheet</option>
+                  <option value="report">Report</option>
+                </select>
               </div>
+
+              {/* Right: Send Button (Icon Only) */}
               <button
                 onClick={handleSubmit}
                 disabled={!query.trim() || isResearching}
-                className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white rounded-lg flex items-center justify-center transition-all shadow-lg shadow-blue-600/20"
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                  query.trim() && !isResearching
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 shadow-md hover:shadow-xl transform hover:scale-105'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
               >
                 <Send className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 mt-2">
-              Press Enter to send, Shift + Enter for new line
-            </p>
-
-            {/* Model & Document Type Selectors Below Helper Text */}
-            <div className="flex items-center space-x-2 mt-3">
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="px-3 py-1.5 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs cursor-pointer bg-slate-800/50 backdrop-blur-sm text-white"
-                disabled={isResearching}
-              >
-                <option value="gpt-5">GPT-5</option>
-                <option value="gpt-5-mini">GPT-5 Mini</option>
-                <option value="gpt-5-nano">GPT-5 Nano</option>
-                <option value="openai/gpt-oss-120b">Cerebras GPT-OSS-120B</option>
-                <option value="gpt-4.1">GPT-4.1</option>
-                <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-                <option value="gpt-4o">GPT-4o</option>
-                <option value="gpt-4o-mini">GPT-4o Mini</option>
-              </select>
-
-              <select
-                value={documentType}
-                onChange={(e) => setDocumentType(e.target.value)}
-                className="px-3 py-1.5 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs cursor-pointer bg-slate-800/50 backdrop-blur-sm text-white"
-                disabled={isResearching}
-              >
-                <option value="document">Document</option>
-                <option value="presentation">Presentation</option>
-                <option value="spreadsheet">Spreadsheet</option>
-                <option value="report">Report</option>
-              </select>
-            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

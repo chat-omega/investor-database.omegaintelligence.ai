@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Building2 } from 'lucide-react';
 import { FundSearchBar } from '@/components/fund/FundSearchBar';
+import { useFundSearch } from '@/services/fundsApi';
 import { FundAnalyticsChat } from '@/components/fund/FundAnalyticsChat';
 import { FundPortfolioTable } from '@/components/fund/FundPortfolioTable';
 import { Fund } from '@/types/fund';
@@ -11,26 +12,44 @@ export function GPDatabasePage() {
   // Fund selection state
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null);
 
-  // Tab state - default to portfolio when fund is selected
-  const [activeTab, setActiveTab] = useState<TabType>('portfolio');
+  // Tab state - default to research
+  const [activeTab, setActiveTab] = useState<TabType>('research');
+
+  // Fetch Andreessen Horowitz fund for default loading
+  const { data: a16zSearch } = useFundSearch({
+    search: 'Andreessen Horowitz',
+    limit: 1,
+    offset: 0,
+    sort_by: 'name',
+    order: 'asc',
+  });
+
+  // Load Andreessen Horowitz by default on mount
+  useEffect(() => {
+    if (!selectedFund && a16zSearch?.funds && a16zSearch.funds.length > 0) {
+      const a16zFund = a16zSearch.funds[0];
+      setSelectedFund(a16zFund);
+      setActiveTab('research');
+    }
+  }, [a16zSearch, selectedFund]);
 
   // Handle fund selection from search bar
   const handleFundChange = (fund: Fund | null) => {
     setSelectedFund(fund);
-    // Switch to portfolio tab when a fund is selected
+    // Switch to research tab when a fund is selected
     if (fund) {
-      setActiveTab('portfolio');
+      setActiveTab('research');
     }
   };
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-full flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Fund Search Bar - at top */}
       <div className="border-b border-slate-700/20 bg-slate-900">
         <div className="px-4 py-3">
           <FundSearchBar
-            onFundChange={handleFundChange}
             selectedFund={selectedFund}
+            onFundChange={handleFundChange}
           />
         </div>
       </div>
@@ -75,7 +94,7 @@ export function GPDatabasePage() {
                 fundName={selectedFund.name}
               />
             ) : (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex-1 flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                   <Building2 className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-white mb-2">No Fund Selected</h3>
@@ -91,7 +110,7 @@ export function GPDatabasePage() {
             {selectedFund ? (
               <FundAnalyticsChat selectedFund={selectedFund} />
             ) : (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex-1 flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                   <Building2 className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-white mb-2">No Fund Selected</h3>

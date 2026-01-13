@@ -12,8 +12,8 @@ export function LPDatabasePage() {
   // LP selection state
   const [selectedLP, setSelectedLP] = useState<LP | null>(null);
 
-  // Tab state - default to holdings when LP is selected
-  const [activeTab, setActiveTab] = useState<TabType>('holdings');
+  // Tab state - default to research
+  const [activeTab, setActiveTab] = useState<TabType>('research');
 
   // Fetch CALSTRS LP for default loading
   const { data: calstrsSearch } = useLPSearch({
@@ -34,16 +34,16 @@ export function LPDatabasePage() {
     if (!selectedLP && calstrsSearch?.lps && calstrsSearch.lps.length > 0) {
       const calstrsLP = calstrsSearch.lps[0];
       setSelectedLP(calstrsLP);
-      setActiveTab('holdings');
+      setActiveTab('research');
     }
   }, [calstrsSearch, selectedLP]);
 
   // Handle LP selection from search bar
   const handleLPChange = (lp: LP | null) => {
     setSelectedLP(lp);
-    // Switch to holdings tab when an LP is selected
+    // Switch to research tab when an LP is selected
     if (lp) {
-      setActiveTab('holdings');
+      setActiveTab('research');
     }
   };
 
