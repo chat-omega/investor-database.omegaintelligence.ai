@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Building2, Search, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { usePreqinFirms, usePreqinStats, formatNumber } from '@/services/preqinApi';
+import { usePreqinFirms, usePreqinStats, formatAUM, formatNumber } from '@/services/preqinApi';
 import type { FirmsParams } from '@/types/preqin';
 
 export function PreqinFirmsPage() {
