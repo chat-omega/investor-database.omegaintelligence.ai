@@ -154,7 +154,7 @@ DATASET_CONFIG = {
 DEFAULT_VISIBLE_COLUMNS = {
     "gp-dataset": {
         "firms": [
-            "firm_name", "firm_type", "country", "city",
+            "firm_name", "firm_type", "city", "background", "country",
             "aum_usd_mn", "dry_powder_usd_mn",
             "primary_strategy", "total_funds", "website", "last_updated"
         ],
@@ -162,7 +162,7 @@ DEFAULT_VISIBLE_COLUMNS = {
     },
     "lp-dataset": {
         "investors": [
-            "firm_name", "institution_type", "country", "city",
+            "firm_name", "institution_type", "city", "background", "country",
             "aum_usd_mn", "pe_allocation_usd_mn", "year_est",
             "investment_strategy", "total_commitments", "website", "last_updated"
         ],

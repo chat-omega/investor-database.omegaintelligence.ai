@@ -241,25 +241,36 @@ def _get_columns_for_sheet(
         ColumnMetadata.table_name == table_name
     ).order_by(ColumnMetadata.column_index).all()
 
-    if columns:
-        # Get default visible columns for this sheet
-        default_visible = DEFAULT_VISIBLE_COLUMNS.get(dataset_id, {}).get(sheet_id)
+    if not columns:
+        # If no metadata in database, return empty list
+        # (columns will be populated during import)
+        return []
 
-        return [
-            ColumnMetadataResponse(
-                key=col.column_key,
-                name=col.column_name,
-                index=col.column_index,
-                data_type=col.data_type or "string",
-                is_visible=col.is_visible_default if default_visible is None else (col.column_key in default_visible),
-                width=col.width_hint
-            )
-            for col in columns
-        ]
+    # Get default visible columns for this sheet
+    default_visible = DEFAULT_VISIBLE_COLUMNS.get(dataset_id, {}).get(sheet_id)
 
-    # If no metadata in database, return empty list
-    # (columns will be populated during import)
-    return []
+    # Build column responses
+    column_responses = []
+    for col in columns:
+        is_visible = col.is_visible_default if default_visible is None else (col.column_key in default_visible)
+        column_responses.append(ColumnMetadataResponse(
+            key=col.column_key,
+            name=col.column_name,
+            index=col.column_index,
+            data_type=col.data_type or "string",
+            is_visible=is_visible,
+            width=col.width_hint
+        ))
+
+    # Sort: visible columns first (in DEFAULT_VISIBLE_COLUMNS order), then non-visible by index
+    if default_visible:
+        visible_order = {key: i for i, key in enumerate(default_visible)}
+        column_responses.sort(key=lambda c: (
+            0 if c.is_visible else 1,  # Visible columns first
+            visible_order.get(c.key, 999) if c.is_visible else c.index  # Order by config or original index
+        ))
+
+    return column_responses
 
 
 # =============================================================================
