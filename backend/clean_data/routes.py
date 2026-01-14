@@ -17,8 +17,10 @@ from clean_data.models import (
 from clean_data.schemas import (
     DatasetInfo, SheetInfo, SheetDataResponse, ColumnMetadataResponse,
     DatasetListResponse, DATASET_CONFIG, DEFAULT_VISIBLE_COLUMNS,
-    CustomColumnCreate, CustomColumnUpdate, CustomColumnResponse, ColumnConfigResponse
+    CustomColumnCreate, CustomColumnUpdate, CustomColumnResponse, ColumnConfigResponse,
+    EnrichmentCellMetadata
 )
+from enrichment.models import EnrichmentResult
 
 logger = logging.getLogger(__name__)
 
@@ -561,7 +563,66 @@ def get_export_data(
         # Get columns for this sheet
         columns = get_sheet_columns(session.source_dataset, session.source_sheet, db)
 
-        items = [item.data for item in paginated_items]
+        # Add custom/enriched columns from export session
+        if session.custom_columns:
+            max_index = max((c.index for c in columns), default=0)
+            for custom_col in session.custom_columns:
+                columns.append(ColumnMetadataResponse(
+                    key=custom_col.get("key", ""),
+                    name=custom_col.get("name", ""),
+                    index=max_index + 1,
+                    data_type="string",
+                    is_visible=True,
+                    width=200
+                ))
+                max_index += 1
+
+        # --- BEGIN: Merge enrichment results ---
+        # Get all row IDs from the paginated items
+        row_ids = [str(item.id) for item in paginated_items]
+
+        # Query enrichment results for these rows
+        enrichment_results = []
+        if row_ids:
+            enrichment_results = db.query(EnrichmentResult).filter(
+                EnrichmentResult.export_id == export_id,
+                EnrichmentResult.row_id.in_(row_ids),
+                EnrichmentResult.status == "completed"
+            ).all()
+
+        # Build lookup: {row_id: {column_key: result}}
+        enrichment_lookup = {}
+        for result in enrichment_results:
+            if result.row_id not in enrichment_lookup:
+                enrichment_lookup[result.row_id] = {}
+            enrichment_lookup[result.row_id][result.column_key] = result
+
+        # Build items with merged enrichment values and metadata
+        items = []
+        enrichment_metadata = {}
+
+        for item in paginated_items:
+            item_dict = dict(item.data) if item.data else {}
+            item_dict["_id"] = str(item.id)
+            item_dict["_row_number"] = item.row_number
+            row_id = str(item.id)
+
+            # Merge enrichment values
+            row_enrichments = enrichment_lookup.get(row_id, {})
+            for col_key, result in row_enrichments.items():
+                item_dict[col_key] = result.value
+
+                # Build enrichment metadata for citations
+                if result.citations or result.confidence is not None:
+                    if row_id not in enrichment_metadata:
+                        enrichment_metadata[row_id] = {}
+                    enrichment_metadata[row_id][col_key] = EnrichmentCellMetadata(
+                        citations=result.citations or [],
+                        confidence=result.confidence
+                    )
+
+            items.append(item_dict)
+        # --- END: Merge enrichment results ---
 
         return SheetDataResponse(
             items=items,
@@ -569,7 +630,8 @@ def get_export_data(
             page=page,
             page_size=page_size,
             total=export_row_count,
-            pages=(export_row_count + page_size - 1) // page_size if export_row_count > 0 else 0
+            pages=(export_row_count + page_size - 1) // page_size if export_row_count > 0 else 0,
+            enrichment_metadata=enrichment_metadata if enrichment_metadata else None
         )
     else:
         # Export contains all matching rows - use standard pagination

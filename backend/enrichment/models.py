@@ -4,7 +4,7 @@ SQLAlchemy models for Enrichment module.
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, Float
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from clean_data.database import CleanDataBase
 
@@ -110,6 +110,12 @@ class EnrichmentResult(CleanDataBase):
 
     # Parallel API run ID
     run_id = Column(String(255))
+
+    # Citations from web research (NEW)
+    citations = Column(JSONB, default=list)
+
+    # Confidence score if available (NEW)
+    confidence = Column(Float)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

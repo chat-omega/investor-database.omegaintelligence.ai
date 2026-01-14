@@ -1,12 +1,14 @@
 /**
  * Generic table component for displaying Clean Data sheets
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Columns, Loader2, Linkedin, Mail, ExternalLink, Filter } from 'lucide-react';
-import type { ColumnDef } from '@/types/cleanData';
+import type { ColumnDef, EnrichmentMetadata } from '@/types/cleanData';
 import { formatNumber, formatCurrency, formatDate, truncateText } from '@/services/cleanDataApi';
 import { ColumnFilter } from './ColumnFilter';
 import { ExportButton } from './ExportButton';
+import { CitationTooltip } from '@/components/ui/CitationTooltip';
+import { CellExpandModal, useCellExpandModal } from './CellExpandModal';
 
 interface CleanDataTableProps {
   data: Record<string, unknown>[];
@@ -31,6 +33,8 @@ interface CleanDataTableProps {
   onFilterChange?: (columnKey: string, value: string | null) => void;
   // Export props
   searchQuery?: string;
+  // Enrichment metadata for citations
+  enrichmentMetadata?: EnrichmentMetadata;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -51,9 +55,35 @@ export function CleanDataTable({
   filters = {},
   onFilterChange,
   searchQuery,
+  enrichmentMetadata,
 }: CleanDataTableProps) {
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const [showColumnSelector, setShowColumnSelector] = useState(false);
+
+  // Column resizing state
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+  const [isResizing, setIsResizing] = useState<string | null>(null);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+
+  // Load saved column widths from localStorage
+  useEffect(() => {
+    const savedWidths = localStorage.getItem('cleanDataTableWidths');
+    if (savedWidths) {
+      try {
+        setColumnWidths(JSON.parse(savedWidths));
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, []);
+
+  // Save column widths to localStorage when changed
+  useEffect(() => {
+    if (Object.keys(columnWidths).length > 0) {
+      localStorage.setItem('cleanDataTableWidths', JSON.stringify(columnWidths));
+    }
+  }, [columnWidths]);
 
   // Reset visible columns when columns prop changes (e.g., switching tabs)
   useEffect(() => {
@@ -81,6 +111,54 @@ export function CleanDataTable({
 
   const resetColumns = () => {
     setVisibleColumns(new Set(columns.filter(c => c.is_visible).map(c => c.key)));
+  };
+
+  // Column resize handlers
+  const handleResizeStart = (e: React.MouseEvent, colKey: string, currentWidth: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(colKey);
+    startXRef.current = e.clientX;
+    startWidthRef.current = currentWidth;
+  };
+
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    const diff = e.clientX - startXRef.current;
+    const newWidth = Math.max(80, startWidthRef.current + diff); // Min 80px
+    setColumnWidths(prev => ({ ...prev, [isResizing]: newWidth }));
+  }, [isResizing]);
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(null);
+  }, []);
+
+  // Attach global mouse events for resizing
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+      return () => {
+        document.removeEventListener('mousemove', handleResizeMove);
+        document.removeEventListener('mouseup', handleResizeEnd);
+      };
+    }
+  }, [isResizing, handleResizeMove, handleResizeEnd]);
+
+  const resetColumnWidths = () => {
+    setColumnWidths({});
+    localStorage.removeItem('cleanDataTableWidths');
+  };
+
+  // Cell expand modal
+  const { modalState, openModal, closeModal } = useCellExpandModal();
+
+  const handleCellClick = (col: ColumnDef, value: unknown) => {
+    const strValue = String(value ?? '');
+    // Only open modal for text content that might be truncated (> 50 chars)
+    if (strValue.length > 50 && col.data_type !== 'number') {
+      openModal(col.name, strValue);
+    }
   };
 
   const displayColumns = columns.filter(c => visibleColumns.has(c.key));
@@ -116,7 +194,8 @@ export function CleanDataTable({
       case 'date':
         return formatDate(strValue);
       default:
-        return truncateText(strValue, 100);
+        // Allow longer text - CSS will handle overflow with ellipsis
+        return truncateText(strValue, 500);
     }
   };
 
@@ -139,15 +218,27 @@ export function CleanDataTable({
     return url.startsWith('http') ? url : `https://${url}`;
   };
 
-  // Render cell content with special handling for links
-  const renderCellContent = (value: unknown, col: ColumnDef): React.ReactNode => {
+  // Render cell content with special handling for links and citations
+  const renderCellContent = (value: unknown, col: ColumnDef, rowId?: string): React.ReactNode => {
     if (value === null || value === undefined || value === '') return '-';
 
     const strValue = String(value);
 
+    // Check if this cell has citations
+    const cellMetadata = rowId && enrichmentMetadata?.[rowId]?.[col.key];
+    const citations = cellMetadata?.citations || [];
+
+    // Helper to wrap content with CitationTooltip if citations exist
+    const wrapWithCitations = (content: React.ReactNode) => {
+      if (citations.length > 0) {
+        return <CitationTooltip citations={citations}>{content}</CitationTooltip>;
+      }
+      return content;
+    };
+
     // Email column - render as mailto link
     if (isEmailColumn(col.key)) {
-      return (
+      return wrapWithCitations(
         <a
           href={`mailto:${strValue}`}
           className="text-emerald-400 hover:text-emerald-300 flex items-center space-x-1"
@@ -162,7 +253,7 @@ export function CleanDataTable({
 
     // LinkedIn column - render as external link
     if (isLinkedInColumn(col.key)) {
-      return (
+      return wrapWithCitations(
         <a
           href={normalizeUrl(strValue)}
           target="_blank"
@@ -179,7 +270,7 @@ export function CleanDataTable({
 
     // Website/URL column - render as external link
     if (isUrlColumn(col.key) && strValue.includes('.')) {
-      return (
+      return wrapWithCitations(
         <a
           href={normalizeUrl(strValue)}
           target="_blank"
@@ -194,8 +285,10 @@ export function CleanDataTable({
       );
     }
 
-    // Default: use existing formatCellValue for plain text
-    return formatCellValue(value, col.data_type, col.key);
+    // Default: use existing formatCellValue for plain text, wrap with citations if present
+    return wrapWithCitations(
+      <span>{formatCellValue(value, col.data_type, col.key)}</span>
+    );
   };
 
   const handleSort = (column: ColumnDef) => {
@@ -253,19 +346,27 @@ export function CleanDataTable({
 
           {showColumnSelector && (
             <div className="absolute right-0 top-full mt-2 w-80 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 max-h-96 overflow-hidden">
-              <div className="p-3 border-b border-slate-700 flex justify-between">
+              <div className="p-3 border-b border-slate-700 flex justify-between items-center">
                 <button
                   onClick={showAllColumns}
                   className="text-xs text-emerald-400 hover:text-emerald-300"
                 >
                   Show All
                 </button>
-                <button
-                  onClick={resetColumns}
-                  className="text-xs text-slate-400 hover:text-slate-300"
-                >
-                  Reset to Default
-                </button>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={resetColumnWidths}
+                    className="text-xs text-purple-400 hover:text-purple-300"
+                  >
+                    Reset Widths
+                  </button>
+                  <button
+                    onClick={resetColumns}
+                    className="text-xs text-slate-400 hover:text-slate-300"
+                  >
+                    Reset Columns
+                  </button>
+                </div>
               </div>
               <div className="max-h-72 overflow-y-auto p-2">
                 {columns.map(col => (
@@ -299,18 +400,30 @@ export function CleanDataTable({
               {displayColumns.map(col => (
                 <th
                   key={col.key}
-                  onClick={() => handleSort(col)}
-                  className="px-3 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-slate-700 transition-colors"
+                  onClick={() => !isResizing && handleSort(col)}
+                  style={{
+                    width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : 'auto',
+                    minWidth: '80px',
+                    position: 'relative',
+                  }}
+                  className={`px-3 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-700 transition-colors select-none ${isResizing === col.key ? 'bg-slate-700' : ''}`}
                 >
-                  <div className="flex items-center space-x-1">
-                    <span title={col.name}>{truncateText(col.name, 25)}</span>
+                  <div className="flex items-center justify-between pr-2">
+                    <span title={col.name} className="truncate">{truncateText(col.name, 25)}</span>
                     {sortBy === col.key && (
                       sortDirection === 'asc' ? (
-                        <ChevronUp className="w-3 h-3" />
+                        <ChevronUp className="w-3 h-3 flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="w-3 h-3" />
+                        <ChevronDown className="w-3 h-3 flex-shrink-0" />
                       )
                     )}
+                  </div>
+                  {/* Resize handle */}
+                  <div
+                    onMouseDown={(e) => handleResizeStart(e, col.key, columnWidths[col.key] || 150)}
+                    className="absolute right-0 top-0 h-full w-2 cursor-col-resize group"
+                  >
+                    <div className="h-full w-0.5 bg-transparent group-hover:bg-emerald-500/50 transition-colors ml-auto" />
                   </div>
                 </th>
               ))}
@@ -338,19 +451,33 @@ export function CleanDataTable({
             )}
           </thead>
           <tbody className="divide-y divide-slate-700/50">
-            {data.map((row, rowIndex) => (
-              <tr key={row._id as string || rowIndex} className="hover:bg-slate-700/30 transition-colors">
-                {displayColumns.map(col => (
-                  <td
-                    key={col.key}
-                    className="px-3 py-2 text-sm text-slate-300 whitespace-nowrap max-w-xs overflow-hidden"
-                    title={String(row[col.key] ?? '')}
-                  >
-                    {renderCellContent(row[col.key], col)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {data.map((row, rowIndex) => {
+              const rowId = row._id as string;
+              return (
+                <tr key={rowId || rowIndex} className="hover:bg-slate-700/30 transition-colors">
+                  {displayColumns.map(col => {
+                    const cellValue = row[col.key];
+                    const strValue = String(cellValue ?? '');
+                    const isExpandable = strValue.length > 50 && col.data_type !== 'number';
+                    return (
+                      <td
+                        key={col.key}
+                        style={{
+                          width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : 'auto',
+                          minWidth: '80px',
+                          maxWidth: columnWidths[col.key] ? `${columnWidths[col.key]}px` : '400px',
+                        }}
+                        className={`px-3 py-2 text-sm text-slate-300 overflow-hidden text-ellipsis whitespace-nowrap ${isExpandable ? 'cursor-pointer hover:bg-slate-700/50' : ''}`}
+                        title={strValue}
+                        onClick={() => isExpandable && handleCellClick(col, cellValue)}
+                      >
+                        {renderCellContent(cellValue, col, rowId)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -404,6 +531,14 @@ export function CleanDataTable({
           </button>
         </div>
       </div>
+
+      {/* Cell Expand Modal */}
+      <CellExpandModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        columnName={modalState.columnName}
+        value={modalState.value}
+      />
     </div>
   );
 }

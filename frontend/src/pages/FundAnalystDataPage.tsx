@@ -216,6 +216,7 @@ export function FundAnalystDataPage() {
           onPageChange={handlePageChange}
           onSort={handleSort}
           onPageSizeChange={handlePageSizeChange}
+          enrichmentMetadata={exportData?.enrichment_metadata}
         />
       </div>
 

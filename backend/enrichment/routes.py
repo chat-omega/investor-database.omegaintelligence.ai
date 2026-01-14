@@ -22,7 +22,13 @@ from enrichment.schemas import (
     EnrichmentProgressEvent,
     PROCESSOR_INFO,
 )
-from enrichment.parallel_client import ParallelClient, build_enrichment_prompt, ParallelAPIError
+from enrichment.parallel_client import (
+    ParallelClient,
+    build_enrichment_prompt,
+    build_enrichment_prompt_with_citations,
+    parse_enrichment_result,
+    ParallelAPIError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -324,8 +330,8 @@ async def run_enrichment_job(
         # Initialize Parallel client
         client = ParallelClient()
 
-        # Build enrichment prompt
-        full_prompt = build_enrichment_prompt(prompt)
+        # Build enrichment prompt with citations support
+        full_prompt = build_enrichment_prompt_with_citations(prompt)
 
         # Process rows (for now, do sequentially - can optimize with batch later)
         for i, row in enumerate(rows):
@@ -345,18 +351,18 @@ async def run_enrichment_job(
                 )
 
                 if result.status == "completed" and result.result:
-                    # Extract the answer from result
-                    answer = result.result
-                    if isinstance(answer, dict):
-                        answer = answer.get("answer") or answer.get("output") or str(answer)
+                    # Parse the result to extract answer and citations
+                    parsed = parse_enrichment_result(result.result)
 
-                    # Store the result
+                    # Store the result with citations
                     enrichment_result = EnrichmentResult(
                         job_id=job.id,
                         export_id=export_id,
                         row_id=row_id,
                         column_key=column_key,
-                        value=str(answer) if answer else None,
+                        value=str(parsed["answer"]) if parsed["answer"] else None,
+                        citations=parsed["citations"],  # Store citations
+                        confidence=parsed["confidence"],  # Store confidence
                         status="completed",
                         run_id=result.run_id,
                         completed_at=datetime.utcnow(),

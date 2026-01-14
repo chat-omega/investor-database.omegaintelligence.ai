@@ -31,6 +31,28 @@ export interface ColumnDef {
   width?: number;
 }
 
+/**
+ * Citation from AI enrichment web research
+ */
+export interface Citation {
+  url: string;
+  title?: string;
+  snippet?: string;
+}
+
+/**
+ * Metadata for an enriched cell (citations, confidence score)
+ */
+export interface EnrichmentCellMetadata {
+  citations: Citation[];
+  confidence?: number;
+}
+
+/**
+ * Enrichment metadata structure: {row_id: {column_key: metadata}}
+ */
+export type EnrichmentMetadata = Record<string, Record<string, EnrichmentCellMetadata>>;
+
 export interface SheetDataResponse {
   items: Record<string, unknown>[];
   total: number;
@@ -38,6 +60,7 @@ export interface SheetDataResponse {
   page_size: number;
   pages: number;
   columns: ColumnDef[];
+  enrichment_metadata?: EnrichmentMetadata;
 }
 
 export interface SheetDataParams {

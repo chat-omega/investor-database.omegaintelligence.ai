@@ -11,7 +11,7 @@ import os
 import json
 import httpx
 import logging
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from typing import Optional, Dict, Any, List, AsyncGenerator, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -381,3 +381,142 @@ Provide a concise, factual answer. If you cannot find the information, respond w
         base_prompt += "\nBriefly explain your reasoning or cite your sources."
 
     return base_prompt
+
+
+def build_enrichment_prompt_with_citations(question: str) -> str:
+    """
+    Build a structured prompt that requests JSON output with citations.
+
+    This prompt instructs the AI to return structured JSON with:
+    - answer: The main response
+    - citations: List of source references with URLs
+
+    Args:
+        question: The user's question about the data
+
+    Returns:
+        Formatted prompt string requesting JSON output
+    """
+    return f"""Based on the provided data and your web research capabilities, answer the following question:
+
+{question}
+
+The input contains data about a fund, company, or investor. Use web search to find current and accurate information.
+
+IMPORTANT: Return your response in the following JSON format:
+{{
+    "answer": "Your concise, factual answer here",
+    "citations": [
+        {{"url": "https://example.com/source", "title": "Source Title", "snippet": "Relevant excerpt from the source"}}
+    ]
+}}
+
+Guidelines:
+- Always include at least one citation for factual claims when available
+- Each citation should have a url, title, and optional snippet
+- Keep the answer concise and focused on the question
+- If information cannot be verified, still provide your best answer with available citations
+- If no information found, return: {{"answer": "No information available", "citations": []}}
+"""
+
+
+def parse_enrichment_result(raw_result: Any) -> Dict[str, Any]:
+    """
+    Parse the raw result from Parallel API into structured format.
+
+    Handles both JSON responses and plain text responses.
+    Also handles Parallel API's native format with 'basis' containing citations.
+
+    Args:
+        raw_result: Raw result from API (could be dict, string, or other)
+
+    Returns:
+        Dict with 'answer' and 'citations' keys
+    """
+    parsed = {
+        "answer": None,
+        "citations": [],
+        "confidence": None
+    }
+
+    if raw_result is None:
+        return parsed
+
+    # Already a dict with expected structure
+    if isinstance(raw_result, dict):
+        # Check for Parallel API's native format with 'basis' containing citations
+        # Format: {"basis": [{"field": "output", "citations": [...]}]}
+        if "basis" in raw_result and isinstance(raw_result.get("basis"), list):
+            basis_list = raw_result["basis"]
+            all_citations = []
+
+            for basis_item in basis_list:
+                if isinstance(basis_item, dict):
+                    item_citations = basis_item.get("citations", [])
+                    for cit in item_citations:
+                        # Normalize citation format
+                        normalized = {
+                            "url": cit.get("url", ""),
+                            "title": cit.get("title", ""),
+                            "snippet": ""
+                        }
+                        # Try to get snippet from excerpts
+                        excerpts = cit.get("excerpts", [])
+                        if excerpts and len(excerpts) > 0:
+                            normalized["snippet"] = excerpts[0] if isinstance(excerpts[0], str) else ""
+                        all_citations.append(normalized)
+
+            parsed["citations"] = all_citations
+
+            # For answer, try to get output/answer/result/content field
+            parsed["answer"] = (
+                raw_result.get("output") or
+                raw_result.get("answer") or
+                raw_result.get("result") or
+                raw_result.get("content")  # Parallel API uses "content" field
+            )
+            if parsed["answer"] is None:
+                # Extract text content, removing metadata fields
+                answer_parts = []
+                for key, value in raw_result.items():
+                    if key not in ("basis", "citations", "confidence", "type"):  # Exclude "type" metadata
+                        if isinstance(value, str):
+                            answer_parts.append(value)
+                parsed["answer"] = " ".join(answer_parts) if answer_parts else str(raw_result)
+
+            return parsed
+
+        # Standard format with answer/output and citations at top level
+        parsed["answer"] = raw_result.get("answer") or raw_result.get("output") or raw_result.get("result")
+        parsed["citations"] = raw_result.get("citations", [])
+        parsed["confidence"] = raw_result.get("confidence")
+
+        # If answer is still None, use the whole dict as string
+        if parsed["answer"] is None:
+            parsed["answer"] = str(raw_result)
+
+        return parsed
+
+    # String result - try to parse as JSON
+    if isinstance(raw_result, str):
+        # Try to extract JSON from the string
+        try:
+            # Look for JSON object in the string
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', raw_result)
+            if json_match:
+                json_str = json_match.group()
+                parsed_json = json.loads(json_str)
+
+                # Recursively parse the JSON using our logic
+                return parse_enrichment_result(parsed_json)
+        except (json.JSONDecodeError, AttributeError):
+            pass
+
+        # Fall back to plain text
+        parsed["answer"] = raw_result
+        return parsed
+
+    # Other types - convert to string
+    parsed["answer"] = str(raw_result)
+    return parsed

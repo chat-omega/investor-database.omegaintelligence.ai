@@ -35,6 +35,12 @@ class ColumnMetadataResponse(BaseModel):
     width: Optional[int]   # Suggested width
 
 
+class EnrichmentCellMetadata(BaseModel):
+    """Metadata for an enriched cell (citations, confidence, etc.)"""
+    citations: List[Dict[str, Any]] = []
+    confidence: Optional[float] = None
+
+
 class SheetDataResponse(BaseModel):
     """Paginated response for sheet data."""
     items: List[Dict[str, Any]]
@@ -43,6 +49,8 @@ class SheetDataResponse(BaseModel):
     page_size: int
     pages: int
     columns: List[ColumnMetadataResponse]
+    # Enrichment metadata: {row_id: {column_key: EnrichmentCellMetadata}}
+    enrichment_metadata: Optional[Dict[str, Dict[str, EnrichmentCellMetadata]]] = None
 
 
 class DatasetListResponse(BaseModel):
