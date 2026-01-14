@@ -2,8 +2,9 @@
 Pydantic schemas for Clean Data API
 """
 
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel
+from typing import List, Dict, Any, Optional, Literal
+from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class SheetInfo(BaseModel):
@@ -175,3 +176,42 @@ DEFAULT_VISIBLE_COLUMNS = {
         "contacts": None,  # Show all (only 17 columns)
     },
 }
+
+
+# =============================================================================
+# Custom Column Schemas
+# =============================================================================
+
+class CustomColumnCreate(BaseModel):
+    """Request schema for creating a custom column."""
+    name: str = Field(..., min_length=1, max_length=255, description="Display name for the column")
+    type: Literal["text", "number", "enriched"] = Field(default="text", description="Column data type")
+    enrichment_prompt: Optional[str] = Field(None, description="Prompt for AI enrichment (required if type is 'enriched')")
+
+
+class CustomColumnUpdate(BaseModel):
+    """Request schema for updating a custom column."""
+    name: Optional[str] = Field(None, min_length=1, max_length=255, description="New display name")
+
+
+class CustomColumnResponse(BaseModel):
+    """Response schema for a custom column."""
+    key: str
+    name: str
+    type: Literal["text", "number", "enriched"]
+    source: Literal["user", "parallel"]
+    enrichment_prompt: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class ColumnConfigResponse(BaseModel):
+    """Response schema for export column configuration."""
+    custom_columns: List[CustomColumnResponse]
+    visible_columns: Optional[List[str]] = None
+    hidden_source_columns: List[str] = []
+
+
+class CustomColumnValueUpdate(BaseModel):
+    """Request schema for updating a cell value in a custom column."""
+    row_id: str = Field(..., description="The row ID to update")
+    value: Any = Field(..., description="The new value for the cell")

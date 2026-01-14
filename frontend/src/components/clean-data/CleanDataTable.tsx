@@ -2,9 +2,11 @@
  * Generic table component for displaying Clean Data sheets
  */
 import { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Columns, Loader2, Linkedin, Mail, ExternalLink } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Columns, Loader2, Linkedin, Mail, ExternalLink, Filter } from 'lucide-react';
 import type { ColumnDef } from '@/types/cleanData';
 import { formatNumber, formatCurrency, formatDate, truncateText } from '@/services/cleanDataApi';
+import { ColumnFilter } from './ColumnFilter';
+import { ExportButton } from './ExportButton';
 
 interface CleanDataTableProps {
   data: Record<string, unknown>[];
@@ -20,7 +22,18 @@ interface CleanDataTableProps {
   sortDirection?: 'asc' | 'desc';
   onPageChange: (page: number) => void;
   onSort: (column: string, direction: 'asc' | 'desc') => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  // Filter props
+  datasetId?: string;
+  sheetId?: string;
+  filterableColumns?: string[];
+  filters?: Record<string, string>;
+  onFilterChange?: (columnKey: string, value: string | null) => void;
+  // Export props
+  searchQuery?: string;
 }
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 
 export function CleanDataTable({
   data,
@@ -31,6 +44,13 @@ export function CleanDataTable({
   sortDirection,
   onPageChange,
   onSort,
+  onPageSizeChange,
+  datasetId,
+  sheetId,
+  filterableColumns = [],
+  filters = {},
+  onFilterChange,
+  searchQuery,
 }: CleanDataTableProps) {
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const [showColumnSelector, setShowColumnSelector] = useState(false);
@@ -201,12 +221,28 @@ export function CleanDataTable({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Column Selector */}
+      {/* Column Selector & Export */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50">
         <div className="text-sm text-slate-400">
           Showing {displayColumns.length} of {columns.length} columns
         </div>
-        <div className="relative">
+        <div className="flex items-center space-x-2">
+          {/* Export Button */}
+          {datasetId && sheetId && (
+            <ExportButton
+              datasetId={datasetId}
+              sheetId={sheetId}
+              filters={filters}
+              visibleColumns={Array.from(visibleColumns)}
+              totalRows={pagination.total}
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              searchQuery={searchQuery}
+              page={pagination.page}
+              pageSize={pagination.pageSize}
+            />
+          )}
+          <div className="relative">
           <button
             onClick={() => setShowColumnSelector(!showColumnSelector)}
             className="flex items-center space-x-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-colors"
@@ -251,6 +287,7 @@ export function CleanDataTable({
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -278,6 +315,27 @@ export function CleanDataTable({
                 </th>
               ))}
             </tr>
+            {/* Filter Row */}
+            {filterableColumns.length > 0 && datasetId && sheetId && onFilterChange && (
+              <tr className="bg-slate-800/80">
+                {displayColumns.map(col => (
+                  <th key={`filter-${col.key}`} className="px-2 py-1.5">
+                    {filterableColumns.includes(col.key) ? (
+                      <ColumnFilter
+                        datasetId={datasetId}
+                        sheetId={sheetId}
+                        columnKey={col.key}
+                        columnName={col.name}
+                        selectedValue={filters[col.key] ?? null}
+                        onFilterChange={(value) => onFilterChange(col.key, value)}
+                      />
+                    ) : (
+                      <div className="h-6" /> // Spacer for non-filterable columns
+                    )}
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody className="divide-y divide-slate-700/50">
             {data.map((row, rowIndex) => (
@@ -299,13 +357,36 @@ export function CleanDataTable({
 
       {/* Pagination */}
       <div className="px-4 py-3 bg-slate-800 border-t border-slate-700/50 flex items-center justify-between">
-        <div className="text-sm text-slate-400">
-          Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {formatNumber(pagination.total)}
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-slate-400">
+            Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {formatNumber(pagination.total)}
+          </div>
+          {onPageSizeChange && (
+            <div className="flex items-center space-x-2">
+              <label htmlFor="page-size-select" className="text-sm text-slate-400">
+                Rows per page:
+              </label>
+              <select
+                id="page-size-select"
+                aria-label="Rows per page"
+                value={pagination.pageSize}
+                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                className="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                {PAGE_SIZE_OPTIONS.map(size => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => onPageChange(pagination.page - 1)}
             disabled={pagination.page <= 1}
+            aria-label="Previous page"
             className="p-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
           >
             <ChevronLeft className="w-4 h-4 text-white" />
@@ -316,6 +397,7 @@ export function CleanDataTable({
           <button
             onClick={() => onPageChange(pagination.page + 1)}
             disabled={pagination.page >= pagination.pages}
+            aria-label="Next page"
             className="p-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
           >
             <ChevronRight className="w-4 h-4 text-white" />

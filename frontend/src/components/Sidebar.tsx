@@ -41,6 +41,7 @@ const fundAnalystSection: NavSection = {
   items: [
     { path: '/gp-database', icon: BarChart3, label: 'GP Analyst' },
     { path: '/lp-database', icon: Users, label: 'LP Analyst' },
+    { path: '/fund-analyst/data', icon: FileSpreadsheet, label: 'My Data' },
   ],
 };
 

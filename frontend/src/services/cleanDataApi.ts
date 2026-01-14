@@ -107,6 +107,236 @@ export function useSheetColumns(datasetId: string, sheetId: string) {
 }
 
 // =============================================================================
+// Column Values API (for filters)
+// =============================================================================
+
+export async function fetchColumnDistinctValues(
+  datasetId: string,
+  sheetId: string,
+  columnKey: string,
+  limit: number = 100
+): Promise<string[]> {
+  const searchParams = new URLSearchParams();
+  if (limit) searchParams.set('limit', String(limit));
+
+  const url = `${API_BASE}/datasets/${datasetId}/sheets/${sheetId}/columns/${columnKey}/values?${searchParams}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Failed to fetch column values');
+  return response.json();
+}
+
+export function useColumnDistinctValues(
+  datasetId: string,
+  sheetId: string,
+  columnKey: string,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: ['clean-data-column-values', datasetId, sheetId, columnKey],
+    queryFn: () => fetchColumnDistinctValues(datasetId, sheetId, columnKey),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    enabled: enabled && !!datasetId && !!sheetId && !!columnKey,
+  });
+}
+
+// =============================================================================
+// Export Session APIs
+// =============================================================================
+
+export interface ExportSession {
+  id: string;
+  name: string;
+  source_dataset: string;
+  source_sheet: string;
+  filters?: Record<string, string>;
+  visible_columns?: string[];
+  sort_by?: string;
+  sort_direction?: string;
+  search_query?: string;
+  custom_columns?: unknown[];
+  row_count: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface CreateExportParams {
+  name: string;
+  source_dataset: string;
+  source_sheet: string;
+  filters?: Record<string, string>;
+  visible_columns?: string[];
+  sort_by?: string;
+  sort_direction?: string;
+  search_query?: string;
+  page?: number;      // Current page to export (1-indexed)
+  page_size?: number; // Rows per page to export
+}
+
+export async function fetchExportSessions(): Promise<ExportSession[]> {
+  const response = await fetch(`${API_BASE}/exports`);
+  if (!response.ok) throw new Error('Failed to fetch export sessions');
+  return response.json();
+}
+
+export function useExportSessions() {
+  return useQuery({
+    queryKey: ['clean-data-exports'],
+    queryFn: fetchExportSessions,
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+}
+
+export async function createExportSession(params: CreateExportParams): Promise<ExportSession> {
+  const searchParams = new URLSearchParams();
+  searchParams.set('name', params.name);
+  searchParams.set('source_dataset', params.source_dataset);
+  searchParams.set('source_sheet', params.source_sheet);
+  if (params.filters) searchParams.set('filters', JSON.stringify(params.filters));
+  if (params.visible_columns) searchParams.set('visible_columns', JSON.stringify(params.visible_columns));
+  if (params.sort_by) searchParams.set('sort_by', params.sort_by);
+  if (params.sort_direction) searchParams.set('sort_direction', params.sort_direction);
+  if (params.search_query) searchParams.set('search_query', params.search_query);
+  if (params.page) searchParams.set('page', String(params.page));
+  if (params.page_size) searchParams.set('page_size', String(params.page_size));
+
+  const response = await fetch(`${API_BASE}/exports?${searchParams}`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error('Failed to create export session');
+  return response.json();
+}
+
+export async function fetchExportSession(exportId: string): Promise<ExportSession> {
+  const response = await fetch(`${API_BASE}/exports/${exportId}`);
+  if (!response.ok) throw new Error('Failed to fetch export session');
+  return response.json();
+}
+
+export function useExportSession(exportId: string) {
+  return useQuery({
+    queryKey: ['clean-data-export', exportId],
+    queryFn: () => fetchExportSession(exportId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!exportId,
+  });
+}
+
+export async function deleteExportSession(exportId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/exports/${exportId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete export session');
+}
+
+export async function fetchExportData(
+  exportId: string,
+  params: SheetDataParams = {}
+): Promise<SheetDataResponse> {
+  const searchParams = new URLSearchParams();
+  if (params.page) searchParams.set('page', String(params.page));
+  if (params.page_size) searchParams.set('page_size', String(params.page_size));
+
+  const response = await fetch(`${API_BASE}/exports/${exportId}/data?${searchParams}`);
+  if (!response.ok) throw new Error('Failed to fetch export data');
+  return response.json();
+}
+
+export function useExportData(exportId: string, params: SheetDataParams = {}) {
+  return useQuery({
+    queryKey: ['clean-data-export-data', exportId, params],
+    queryFn: () => fetchExportData(exportId, params),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!exportId,
+  });
+}
+
+// =============================================================================
+// Custom Column Management APIs
+// =============================================================================
+
+export interface CustomColumn {
+  key: string;
+  name: string;
+  type: 'text' | 'number' | 'enriched';
+  source: 'user' | 'parallel';
+  enrichment_prompt?: string;
+  created_at?: string;
+}
+
+export interface ColumnConfig {
+  custom_columns: CustomColumn[];
+  visible_columns: string[] | null;
+  hidden_source_columns: string[];
+}
+
+export interface CreateColumnParams {
+  name: string;
+  type?: 'text' | 'number' | 'enriched';
+  enrichment_prompt?: string;
+}
+
+export async function fetchExportColumns(exportId: string): Promise<ColumnConfig> {
+  const response = await fetch(`${API_BASE}/exports/${exportId}/columns`);
+  if (!response.ok) throw new Error('Failed to fetch export columns');
+  return response.json();
+}
+
+export function useExportColumns(exportId: string) {
+  return useQuery({
+    queryKey: ['clean-data-export-columns', exportId],
+    queryFn: () => fetchExportColumns(exportId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!exportId,
+  });
+}
+
+export async function addCustomColumn(
+  exportId: string,
+  params: CreateColumnParams
+): Promise<CustomColumn> {
+  const response = await fetch(`${API_BASE}/exports/${exportId}/columns`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || 'Failed to add column');
+  }
+  return response.json();
+}
+
+export async function deleteCustomColumn(
+  exportId: string,
+  columnKey: string
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/exports/${exportId}/columns/${columnKey}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || 'Failed to delete column');
+  }
+}
+
+export async function updateCustomColumn(
+  exportId: string,
+  columnKey: string,
+  params: { name?: string }
+): Promise<CustomColumn> {
+  const response = await fetch(`${API_BASE}/exports/${exportId}/columns/${columnKey}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || 'Failed to update column');
+  }
+  return response.json();
+}
+
+// =============================================================================
 // Stats API
 // =============================================================================
 

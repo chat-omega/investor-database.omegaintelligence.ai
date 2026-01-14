@@ -74,11 +74,18 @@ def init_clean_data_schema() -> None:
         connection.commit()
         logger.info("Created clean_data schema")
 
-    # Import and create all tables
+    # Import and create all tables (including enrichment models)
     from clean_data.models import (
         GPFirm, GPContact, LPInvestor, LPContact,
-        Deal, Fund, FundContact, ColumnMetadata
+        Deal, Fund, FundContact, ColumnMetadata, ExportSession
     )
+
+    # Also import enrichment models
+    try:
+        from enrichment.models import EnrichmentJob, EnrichmentResult
+        logger.info("Enrichment models imported")
+    except ImportError:
+        logger.warning("Enrichment models not available")
 
     CleanDataBase.metadata.create_all(bind=engine)
     logger.info("Created all clean_data tables")

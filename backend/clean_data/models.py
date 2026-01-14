@@ -246,6 +246,46 @@ class FundContact(CleanDataBase):
 
 
 # =============================================================================
+# Export Session Model
+# =============================================================================
+
+class ExportSession(CleanDataBase):
+    """
+    Stores export sessions for Fund Analyst data manipulation.
+    When users export data from GP/LP Dataset pages, a session is created
+    to track the configuration and allow manipulation in Fund Analyst.
+    """
+    __tablename__ = "export_sessions"
+    __table_args__ = {"schema": "clean_data"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False)
+    source_dataset = Column(String(100), nullable=False)  # e.g., 'gp-dataset'
+    source_sheet = Column(String(100), nullable=False)    # e.g., 'firms'
+
+    # Export configuration
+    filters = Column(JSONB)           # Applied filters at time of export
+    visible_columns = Column(JSONB)   # Selected column keys
+    sort_by = Column(String(255))
+    sort_direction = Column(String(10))
+    search_query = Column(String(500))
+
+    # Page configuration for current-page-only exports
+    export_page = Column(Integer)     # Page number at time of export (1-indexed)
+    export_page_size = Column(Integer)  # Rows per page at time of export
+
+    # Custom columns added by user
+    custom_columns = Column(JSONB, default=list)
+
+    # Row count at time of export (for display)
+    row_count = Column(Integer)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# =============================================================================
 # Column Metadata Model
 # =============================================================================
 

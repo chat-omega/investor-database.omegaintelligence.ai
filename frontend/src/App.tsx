@@ -23,6 +23,9 @@ import { CleanDataLPPage } from '@/pages/clean-data/CleanDataLPPage';
 import { CleanDataDealsPage } from '@/pages/clean-data/CleanDataDealsPage';
 import { CleanDataFundsPage } from '@/pages/clean-data/CleanDataFundsPage';
 
+// Fund Analyst Pages
+import { FundAnalystDataPage, FundAnalystDataListPage } from '@/pages/FundAnalystDataPage';
+
 // Sidebar layout component
 function SidebarLayout() {
   const { isCollapsed } = useSidebar();
@@ -57,6 +60,10 @@ function SidebarLayout() {
             <Route path="/clean-data/lp" element={<CleanDataLPPage />} />
             <Route path="/clean-data/deals" element={<CleanDataDealsPage />} />
             <Route path="/clean-data/funds" element={<CleanDataFundsPage />} />
+
+            {/* Fund Analyst Data routes */}
+            <Route path="/fund-analyst/data" element={<FundAnalystDataListPage />} />
+            <Route path="/fund-analyst/data/:exportId" element={<FundAnalystDataPage />} />
           </Routes>
         </div>
       </main>

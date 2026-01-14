@@ -67,6 +67,14 @@ except ImportError:
     CLEAN_DATA_AVAILABLE = False
     clean_data_router = None
 
+# Import Enrichment router
+try:
+    from enrichment.routes import router as enrichment_router
+    ENRICHMENT_AVAILABLE = True
+except ImportError:
+    ENRICHMENT_AVAILABLE = False
+    enrichment_router = None
+
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -100,6 +108,10 @@ if PREQIN_AVAILABLE and preqin_router:
 # Include Clean Data layer router if available
 if CLEAN_DATA_AVAILABLE and clean_data_router:
     app.include_router(clean_data_router)
+
+# Include Enrichment router if available
+if ENRICHMENT_AVAILABLE and enrichment_router:
+    app.include_router(enrichment_router)
 
 # In-memory storage for research sessions
 research_sessions: Dict[str, dict] = {}

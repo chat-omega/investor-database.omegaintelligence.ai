@@ -9,18 +9,27 @@ import { CleanDataTable } from '@/components/clean-data/CleanDataTable';
 import { CleanDataTabs } from '@/components/clean-data/CleanDataTabs';
 import type { SheetDataParams } from '@/types/cleanData';
 
+// Filterable columns configuration for GP dataset
+// Column keys must match actual JSONB keys in database
+const FILTERABLE_COLUMNS: Record<string, string[]> = {
+  firms: ['country', 'firm_type', 'pe_main_firm_strategy'],
+  contacts: ['job_title'],
+};
+
 export function CleanDataGPPage() {
   const [activeSheet, setActiveSheet] = useState('firms');
   const [params, setParams] = useState<SheetDataParams>({ page: 1, page_size: 50 });
   const [searchInput, setSearchInput] = useState('');
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
   const { data: dataset, isLoading: datasetLoading } = useDataset('gp-dataset');
   const { data: sheetData, isLoading: sheetLoading } = useSheetData('gp-dataset', activeSheet, params);
 
-  // Reset pagination when switching sheets
+  // Reset pagination and filters when switching sheets
   useEffect(() => {
-    setParams(prev => ({ ...prev, page: 1 }));
+    setParams(prev => ({ ...prev, page: 1, filters: undefined }));
     setSearchInput('');
+    setFilters({});
   }, [activeSheet]);
 
   const handleSearch = () => {
@@ -33,6 +42,37 @@ export function CleanDataGPPage() {
 
   const handleSort = (sortBy: string, sortDirection: 'asc' | 'desc') => {
     setParams(prev => ({ ...prev, sort_by: sortBy, sort_direction: sortDirection, page: 1 }));
+  };
+
+  const handlePageSizeChange = (pageSize: number) => {
+    setParams(prev => ({ ...prev, page_size: pageSize, page: 1 }));
+  };
+
+  const handleFilterChange = (columnKey: string, value: string | null) => {
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      if (value === null) {
+        delete newFilters[columnKey];
+      } else {
+        newFilters[columnKey] = value;
+      }
+      return newFilters;
+    });
+
+    // Update params with new filters
+    setParams(prev => {
+      const newFilters = { ...filters };
+      if (value === null) {
+        delete newFilters[columnKey];
+      } else {
+        newFilters[columnKey] = value;
+      }
+      return {
+        ...prev,
+        filters: Object.keys(newFilters).length > 0 ? newFilters : undefined,
+        page: 1,
+      };
+    });
   };
 
   return (
@@ -97,6 +137,13 @@ export function CleanDataGPPage() {
           sortDirection={params.sort_direction}
           onPageChange={handlePageChange}
           onSort={handleSort}
+          onPageSizeChange={handlePageSizeChange}
+          datasetId="gp-dataset"
+          sheetId={activeSheet}
+          filterableColumns={FILTERABLE_COLUMNS[activeSheet] ?? []}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          searchQuery={params.search}
         />
       </div>
     </div>
