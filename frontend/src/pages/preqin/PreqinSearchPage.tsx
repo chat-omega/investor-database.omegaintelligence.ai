@@ -91,7 +91,7 @@ export function PreqinSearchPage() {
             <Search className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Preqin Search</h1>
+            <h1 className="text-xl font-bold text-white">Search</h1>
             <p className="text-sm text-slate-400">Hybrid Search Across All Entities</p>
           </div>
         </div>
@@ -225,9 +225,9 @@ export function PreqinSearchPage() {
         {!searchMutation.data && !searchMutation.isPending && (
           <div className="max-w-4xl mx-auto text-center py-12">
             <Search className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-white mb-2">Search Preqin Data</h3>
+            <h3 className="text-xl font-medium text-white mb-2">Search Data</h3>
             <p className="text-slate-400 max-w-md mx-auto">
-              Use hybrid search to find firms, funds, deals, companies, and people across the Preqin database.
+              Use hybrid search to find firms, funds, deals, companies, and people across the database.
               Combines full-text, fuzzy, and semantic search for best results.
             </p>
           </div>

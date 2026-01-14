@@ -96,7 +96,7 @@ export function SecondaryFundsPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Secondary Funds Database</h1>
-              <p className="text-sm text-slate-400">Preqin LP/GP/Fund Data</p>
+              <p className="text-sm text-slate-400">LP/GP/Fund Data</p>
             </div>
           </div>
           {stats && (

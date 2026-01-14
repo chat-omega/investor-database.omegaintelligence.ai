@@ -28,7 +28,7 @@ export function PreqinFirmsPage() {
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Preqin Firms</h1>
+              <h1 className="text-xl font-bold text-white">Firms</h1>
               <p className="text-sm text-slate-400">GP & LP Firms Database</p>
             </div>
           </div>

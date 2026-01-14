@@ -24,7 +24,7 @@ export function PreqinStatsPage() {
             <PieChart className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Preqin Stats Dashboard</h1>
+            <h1 className="text-xl font-bold text-white">Stats Dashboard</h1>
             <p className="text-sm text-slate-400">Aggregate Statistics Overview</p>
           </div>
         </div>

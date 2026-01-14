@@ -170,16 +170,16 @@ DEFAULT_VISIBLE_COLUMNS = {
     },
     "deals-dataset": {
         "deals": [
-            "deal_id", "portfolio_company", "deal_date", "deal_type",
-            "deal_size_usd_mn", "investors_buyers_firms_funds", "country",
+            "portfolio_company", "deal_date", "deal_type",
+            "deal_size_usd_mn", "investors_buyers_firms", "country",
             "primary_industry", "stage", "deal_status"
         ],
     },
     "funds-dataset": {
         "funds": [
-            "fund_id", "name", "firm_name", "vintage_inception_year",
+            "name", "fund_manager", "vintage_inception_year",
             "fund_size_usd_mn", "target_size_usd_mn", "strategy", "status",
-            "domicile", "primary_region_focus", "first_close_date", "final_close_date"
+            "domicile", "primary_region_focus", "final_close_date"
         ],
         "contacts": None,  # Show all (only 17 columns)
     },

@@ -172,6 +172,14 @@ export function CleanDataTable({
     // Check if this is an ID column - never format as currency
     const isIdColumn = keyLower.includes('_id') || keyLower.endsWith('id') || keyLower === 'id';
 
+    // Check if this is a year column - format without commas
+    const isYearColumn = keyLower.includes('year') || keyLower.includes('vintage') || keyLower.includes('inception');
+
+    // Check if this is a currency column - format with $ and M/B
+    const isCurrencyColumn = keyLower.includes('_usd_') || keyLower.includes('_mn') ||
+                             keyLower.includes('size') || keyLower.includes('aum') ||
+                             keyLower.includes('allocation') || keyLower.includes('dry_powder');
+
     // Check if this looks like an ISO date string (e.g., 2025-12-04T00:00:00)
     const isIsoDate = /^\d{4}-\d{2}-\d{2}(T|\s)/.test(strValue);
     if (isIsoDate) {
@@ -186,8 +194,12 @@ export function CleanDataTable({
         if (isIdColumn) {
           return strValue;
         }
-        // Check if it looks like currency (contains M, B, or large number)
-        if (strValue.includes('MN') || strValue.includes('USD') || num > 100000) {
+        // Year columns - no commas, just the plain number
+        if (isYearColumn) {
+          return Math.round(num).toString();
+        }
+        // Currency columns - format with $ and M/B
+        if (isCurrencyColumn || strValue.includes('MN') || strValue.includes('USD') || num > 100000) {
           return formatCurrency(num);
         }
         return formatNumber(num);

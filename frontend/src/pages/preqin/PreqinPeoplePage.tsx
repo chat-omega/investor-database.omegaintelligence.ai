@@ -28,7 +28,7 @@ export function PreqinPeoplePage() {
               <UserCircle className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Preqin People</h1>
+              <h1 className="text-xl font-bold text-white">People</h1>
               <p className="text-sm text-slate-400">Contacts & Professionals</p>
             </div>
           </div>

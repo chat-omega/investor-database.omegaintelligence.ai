@@ -28,7 +28,7 @@ export function PreqinCompaniesPage() {
               <Factory className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Preqin Companies</h1>
+              <h1 className="text-xl font-bold text-white">Companies</h1>
               <p className="text-sm text-slate-400">Portfolio & Target Companies</p>
             </div>
           </div>

@@ -45,21 +45,19 @@ function SidebarLayout() {
             <Route path="/lp-database" element={<LPDatabasePage />} />
             <Route path="/secondary-funds" element={<SecondaryFundsPage />} />
 
-            {/* Preqin routes */}
-            <Route path="/preqin/firms" element={<PreqinFirmsPage />} />
-            <Route path="/preqin/funds" element={<PreqinFundsPage />} />
-            <Route path="/preqin/deals" element={<PreqinDealsPage />} />
-            <Route path="/preqin/companies" element={<PreqinCompaniesPage />} />
-            <Route path="/preqin/people" element={<PreqinPeoplePage />} />
-            <Route path="/preqin/network" element={<PreqinCoInvestmentPage />} />
-            <Route path="/preqin/search" element={<PreqinSearchPage />} />
-            <Route path="/preqin/stats" element={<PreqinStatsPage />} />
-
-            {/* Clean Data routes */}
-            <Route path="/clean-data/gp" element={<CleanDataGPPage />} />
-            <Route path="/clean-data/lp" element={<CleanDataLPPage />} />
-            <Route path="/clean-data/deals" element={<CleanDataDealsPage />} />
-            <Route path="/clean-data/funds" element={<CleanDataFundsPage />} />
+            {/* Private Market Data routes */}
+            <Route path="/data/gp" element={<CleanDataGPPage />} />
+            <Route path="/data/lp" element={<CleanDataLPPage />} />
+            <Route path="/data/deals-export" element={<CleanDataDealsPage />} />
+            <Route path="/data/private-funds" element={<CleanDataFundsPage />} />
+            <Route path="/data/firms" element={<PreqinFirmsPage />} />
+            <Route path="/data/funds" element={<PreqinFundsPage />} />
+            <Route path="/data/deals" element={<PreqinDealsPage />} />
+            <Route path="/data/companies" element={<PreqinCompaniesPage />} />
+            <Route path="/data/people" element={<PreqinPeoplePage />} />
+            <Route path="/data/network" element={<PreqinCoInvestmentPage />} />
+            <Route path="/data/search" element={<PreqinSearchPage />} />
+            <Route path="/data/stats" element={<PreqinStatsPage />} />
 
             {/* Fund Analyst Data routes */}
             <Route path="/fund-analyst/data" element={<FundAnalystDataListPage />} />

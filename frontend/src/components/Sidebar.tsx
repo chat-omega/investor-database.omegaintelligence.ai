@@ -51,21 +51,19 @@ const privateMarketSection: NavSection = {
   icon: FileSpreadsheet,
   accentColor: 'from-emerald-500 to-teal-500',
   items: [
-    // Clean Data items first
-    { path: '/clean-data/gp', icon: Building2, label: 'GP Dataset' },
-    { path: '/clean-data/lp', icon: Users, label: 'LP Dataset' },
-    { path: '/clean-data/deals', icon: ArrowLeftRight, label: 'Deals Export' },
-    { path: '/clean-data/funds', icon: Briefcase, label: 'Private Funds' },
+    { path: '/data/search', icon: Search, label: 'Search' },
+    { path: '/data/gp', icon: Building2, label: 'GP Dataset' },
+    { path: '/data/lp', icon: Users, label: 'LP Dataset' },
+    { path: '/data/deals-export', icon: ArrowLeftRight, label: 'Deals Export' },
+    { path: '/data/private-funds', icon: Briefcase, label: 'Private Funds' },
     { path: '/secondary-funds', icon: Database, label: 'Secondary Funds' },
-    // Preqin items below
-    { path: '/preqin/firms', icon: Building2, label: 'Firms' },
-    { path: '/preqin/funds', icon: Briefcase, label: 'Funds' },
-    { path: '/preqin/deals', icon: ArrowLeftRight, label: 'Deals' },
-    { path: '/preqin/companies', icon: Factory, label: 'Companies' },
-    { path: '/preqin/people', icon: UserCircle, label: 'People' },
-    { path: '/preqin/network', icon: Network, label: 'Co-Investment Network' },
-    { path: '/preqin/search', icon: Search, label: 'Search' },
-    { path: '/preqin/stats', icon: PieChart, label: 'Stats Dashboard' },
+    { path: '/data/firms', icon: Building2, label: 'Firms' },
+    { path: '/data/funds', icon: Briefcase, label: 'Funds' },
+    { path: '/data/deals', icon: ArrowLeftRight, label: 'Deals' },
+    { path: '/data/companies', icon: Factory, label: 'Companies' },
+    { path: '/data/people', icon: UserCircle, label: 'People' },
+    { path: '/data/network', icon: Network, label: 'Co-Investment Network' },
+    { path: '/data/stats', icon: PieChart, label: 'Stats Dashboard' },
   ],
 };
 

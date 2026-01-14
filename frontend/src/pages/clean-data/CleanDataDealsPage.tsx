@@ -38,7 +38,7 @@ export function CleanDataDealsPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Deals Export</h1>
-              <p className="text-sm text-slate-400">Private market transactions from Preqin</p>
+              <p className="text-sm text-slate-400">Private Market Transactions</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
