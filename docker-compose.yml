@@ -6,7 +6,7 @@ services:
     image: pgvector/pgvector:pg16
     container_name: preqin-postgres
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     environment:
       - POSTGRES_USER=investor_user
       - POSTGRES_PASSWORD=preqin_dev_password
@@ -29,7 +29,7 @@ services:
     image: investor-database-frontend:dev
     container_name: investor-frontend
     ports:
-      - "3004:3000"
+      - "127.0.0.1:3004:3000"
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
@@ -49,7 +49,7 @@ services:
     image: investor-database-backend:latest
     container_name: investor-backend
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
